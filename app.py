@@ -8,6 +8,10 @@ import plotly.graph_objects as go
 from datetime import datetime
 from pathlib import Path
 
+with open("theme.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
 # -----------------------------
 # Configuration / Theme colors
 # -----------------------------
@@ -418,3 +422,4 @@ if submitted:
 st.markdown("<div style='text-align:center; color:#666; font-size:12px; margin-top:12px'>"
             "Dibangun menggunakan Streamlit • Hasil prediksi SARIMA diproses terpisah di Google Colab</div>",
             unsafe_allow_html=True)
+
