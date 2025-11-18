@@ -1,425 +1,770 @@
-# app.py
-import streamlit as st
-import pandas as pd
-import numpy as np
-import os
-import io
-import plotly.graph_objects as go
-from datetime import datetime
+import math
 from pathlib import Path
+from io import BytesIO
+import re
+from datetime import datetime
 
-with open("theme.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+import pandas as pd
+import streamlit as st
 
-
-# -----------------------------
-# Configuration / Theme colors
-# -----------------------------
-ACCENT = "#FFCC4D"   # soft yellow/gold for highlights
-BG = "#FFFFFF"       # white
-CARD_BG = "#F6F7F9"  # light grey card background
-LINE_COLOR = "#2B7AEE"  # soft blue for main lines
-
-st.set_page_config(page_title="Sistem Prediksi Stok Pisang — Bungo Family",
-                   layout="wide",
-                   initial_sidebar_state="auto")
-
-# Admin password (change before deploy if needed)
-ADMIN_PASSWORD = "admin123"
-
-# Data directory & server file path
-DATA_DIR = Path("data")
-DATA_DIR.mkdir(exist_ok=True)
-FORECAST_PATH = DATA_DIR / "forecast.xlsx"  # file saved by admin upload
-HIST_PATH = DATA_DIR / "historical.xlsx"    # optional historical actuals (admin can upload)
+# Optional: Altair untuk grafik (sudah ikut di Streamlit)
+import altair as alt
 
 # -----------------------------
-# Helper functions
+# Konfigurasi halaman
 # -----------------------------
-def save_uploaded_file(uploaded_file, destination_path: Path):
-    try:
-        if uploaded_file.name.lower().endswith((".xlsx", ".xls")):
-            with open(destination_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-        else:
-            # assume csv
-            df = pd.read_csv(uploaded_file)
-            df.to_excel(destination_path, index=False)
-        return True
-    except Exception as e:
-        st.error(f"Gagal menyimpan file: {e}")
-        return False
+st.set_page_config(
+    page_title="Dashboard Penjualan Pisang",
+    page_icon="🍌",
+    layout="wide",
+)
 
-def load_forecast(path: Path):
-    if not path.exists():
-        return None
+# -----------------------------
+# Load CSS eksternal
+# -----------------------------
+def load_local_css(file_name: str = "theme.css") -> None:
     try:
-        df = pd.read_excel(path)
-    except Exception:
-        try:
-            df = pd.read_csv(path)
-        except Exception:
-            st.error("File forecast tidak bisa dibaca. Format harus .xlsx atau .csv")
-            return None
-    # detect date column
-    df_cols_lower = [c.lower() for c in df.columns]
-    date_col = None
-    for cand in ["date", "tanggal", "ds", "periode", "periode_date", "index"]:
-        if cand in df_cols_lower:
-            date_col = df.columns[df_cols_lower.index(cand)]
-            break
-    if date_col is None:
-        # fallback to first column
-        date_col = df.columns[0]
-    # convert date
-    try:
-        df[date_col] = pd.to_datetime(df[date_col])
-    except Exception:
-        # try parsing by month-year if needed
-        try:
-            df[date_col] = pd.to_datetime(df[date_col].astype(str), errors='coerce')
-        except:
-            pass
-    df = df.rename(columns={date_col: "date"})
-    df = df.set_index("date").sort_index()
-    # locate mean/prediction column
-    col_map = {c: c for c in df.columns}
-    for c in df.columns:
-        cl = c.lower()
-        if ("mean" in cl) or ("pred" in cl) or ("yhat" in cl) or ("forecast" in cl):
-            col_map[c] = "mean"
-        if ("lower" in cl) and ("ci" in cl or "conf" in cl or "lower" in cl):
-            col_map[c] = "lower"
-        if ("upper" in cl) and ("ci" in cl or "conf" in cl or "upper" in cl):
-            col_map[c] = "upper"
-    df = df.rename(columns=col_map)
-    # ensure numeric
-    if "mean" not in df.columns:
-        numeric_cols = df.select_dtypes(include=np.number).columns
-        if len(numeric_cols) > 0:
-            df = df.rename(columns={numeric_cols[0]: "mean"})
-    return df
-
-def load_historical(path: Path):
-    if not path.exists():
-        return None
-    try:
-        df = pd.read_excel(path)
-    except Exception:
-        try:
-            df = pd.read_csv(path)
-        except Exception:
-            return None
-    # detect date & actual columns similar to forecast
-    df_cols_lower = [c.lower() for c in df.columns]
-    date_col = None
-    for cand in ["date", "tanggal", "ds", "periode", "index"]:
-        if cand in df_cols_lower:
-            date_col = df.columns[df_cols_lower.index(cand)]
-            break
-    if date_col is None:
-        date_col = df.columns[0]
-    try:
-        df[date_col] = pd.to_datetime(df[date_col])
-    except:
+        css_path = Path(__file__).parent / file_name
+        with css_path.open() as f:
+            css = f.read()
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        # Kalau CSS belum ada, biarkan saja (app tetap jalan)
         pass
-    df = df.rename(columns={date_col: "date"})
-    df = df.set_index("date").sort_index()
-    # find actual column
+
+load_local_css()
+
+# -----------------------------
+# Helper: Nama bulan Indonesia
+# -----------------------------
+ID_MONTHS = {
+    "januari": 1, "jan": 1, "jan.": 1,
+    "februari": 2, "feb": 2, "feb.": 2,
+    "maret": 3, "mar": 3, "mar.": 3,
+    "april": 4, "apr": 4, "apr.": 4,
+    "mei": 5,
+    "juni": 6, "jun": 6, "jun.": 6,
+    "juli": 7, "jul": 7, "jul.": 7,
+    "agustus": 8, "agu": 8, "agu.": 8, "aug": 8, "aug.": 8,
+    "september": 9, "sept": 9, "sept.": 9, "sep": 9, "sep.": 9,
+    "oktober": 10, "okt": 10, "okt.": 10, "oct": 10, "oct.": 10,
+    "november": 11, "nov": 11, "nov.": 11,
+    "desember": 12, "des": 12, "des.": 12, "dec": 12, "dec.": 12,
+}
+
+ID_MONTH_NAMES = {
+    1: "Januari", 2: "Februari", 3: "Maret", 4: "April",
+    5: "Mei", 6: "Juni", 7: "Juli", 8: "Agustus",
+    9: "September", 10: "Oktober", 11: "November", 12: "Desember",
+}
+
+def month_name_id(month_num: int) -> str:
+    return ID_MONTH_NAMES.get(int(month_num), str(month_num))
+
+
+# -----------------------------
+# UNIVERSAL EXCEL PARSER
+# -----------------------------
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Lowercase, hilangkan spasi berlebih, dsb."""
+    df = df.copy()
+    new_cols = []
     for c in df.columns:
-        if ("jumlah" in c.lower()) or ("actual" in c.lower()) or ("sisir" in c.lower()) or ("y" == c.lower()):
-            df = df.rename(columns={c: "actual"})
-            break
+        c_str = str(c).strip()
+        c_str = re.sub(r"\s+", "_", c_str)
+        c_str = c_str.lower()
+        new_cols.append(c_str)
+    df.columns = new_cols
     return df
 
-def create_plot(forecast_df, historical_df=None, highlight_months=None):
-    fig = go.Figure()
-    # historical line
-    if historical_df is not None and "actual" in historical_df.columns:
-        fig.add_trace(go.Scatter(
-            x=historical_df.index, y=historical_df["actual"],
-            mode="lines+markers", name="Actual", line=dict(color="gray"), marker=dict(size=6)
-        ))
-    # forecast line
-    fig.add_trace(go.Scatter(
-        x=forecast_df.index, y=forecast_df["mean"],
-        mode="lines+markers", name="Forecast", line=dict(color=LINE_COLOR, width=3), marker=dict(size=6)
-    ))
-    # confidence interval
-    if "lower" in forecast_df.columns and "upper" in forecast_df.columns:
-        fig.add_trace(go.Scatter(
-            x=list(forecast_df.index) + list(forecast_df.index[::-1]),
-            y=list(forecast_df["upper"]) + list(forecast_df["lower"][::-1]),
-            fill="toself", fillcolor="rgba(255,204,77,0.15)", line=dict(color="rgba(255,204,77,0)"),
-            showlegend=True, name="Confidence Interval"
-        ))
-    # highlight months (e.g., Ramadan) as vertical shapes
-    if highlight_months:
-        shapes = []
-        annotations = []
-        for dt in forecast_df.index:
-            if dt.month in highlight_months:
-                shapes.append(dict(type="rect",
-                                   x0=dt - pd.Timedelta(days=15), x1=dt + pd.Timedelta(days=15),
-                                   y0=0, y1=max(forecast_df["mean"].max(), (historical_df["actual"].max() if historical_df is not None and "actual" in historical_df.columns else 0)) * 1.4,
-                                   fillcolor="rgba(255,204,77,0.12)", line=dict(width=0)))
-        if shapes:
-            fig.update_layout(shapes=shapes)
-    fig.update_layout(
-        margin=dict(l=40, r=20, t=50, b=40),
-        paper_bgcolor=BG, plot_bgcolor=BG,
-        xaxis=dict(title="Periode", showgrid=True, rangeslider=dict(visible=True)),
-        yaxis=dict(title="Jumlah Pisang (sisir)", showgrid=True),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-    )
-    return fig
 
-def forecast_insights(forecast_df):
-    # basic numeric summary and simple textual insights
-    mean_vals = forecast_df["mean"].values
-    avg = float(np.round(np.mean(mean_vals), 2))
-    mx = int(np.max(mean_vals))
-    mn = int(np.min(mean_vals))
-    peak_idx = forecast_df["mean"].idxmax()
-    try:
-        peak_str = peak_idx.strftime("%B %Y")
-    except:
-        peak_str = str(peak_idx)
-    # percent change next month vs current month
-    if len(forecast_df) >= 2:
-        cur = forecast_df["mean"].iloc[0]
-        nxt = forecast_df["mean"].iloc[1]
-        pct_next = float(np.round((nxt - cur) / max(1, cur) * 100, 2))
-    else:
-        pct_next = 0.0
-    text_lines = [
-        f"Rata-rata prediksi 12 bulan: {avg} sisir/bulan.",
-        f"Perkiraan tertinggi: {mx} sisir pada {peak_str}. Perkiraan terendah: {mn} sisir.",
-        f"Perubahan bulan terdekat → berikutnya: {pct_next}%."
+def detect_date_column(df: pd.DataFrame):
+    """Mencari kolom tanggal langsung (datetime atau string yang bisa di-parse)."""
+    # 1) Kolom yang sudah datetime
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            if df[col].notna().sum() >= max(3, len(df) * 0.5):
+                return col, df[col]
+
+    # 2) Kolom dengan kata kunci tanggal/periode
+    date_keywords = [
+        "tanggal", "tgl", "date", "waktu", "period",
+        "periode", "bulan_tahun", "bulan-thn", "bulan-tahun",
     ]
-    return "\n".join(text_lines)
+    for col in df.columns:
+        if any(k in col for k in date_keywords):
+            parsed = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
+            if parsed.notna().sum() >= max(3, len(df) * 0.5):
+                return col, parsed
 
-def df_to_excel_bytes(df):
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        df.to_excel(writer, index=True, sheet_name="forecast")
-        writer.save()
-    return output.getvalue()
+    return None, None
 
-def compare_prev_year(forecast_df, historical_df=None):
-    # compare average last year (if available) vs forecast average (next 12 months)
-    result = {}
-    forecast_avg = float(np.round(forecast_df["mean"].mean(),2))
-    result["forecast_avg"] = forecast_avg
-    # try historical df for last year's same months average
-    if historical_df is not None and "actual" in historical_df.columns:
-        try:
-            last_year = sorted(list(set(historical_df.index.year)))[-1]
-            hist_last_year = historical_df[historical_df.index.year == last_year]
-            hist_avg = float(np.round(hist_last_year["actual"].mean(),2))
-            result["historical_last_year_avg"] = hist_avg
-            result["pct_diff"] = float(np.round((forecast_avg - hist_avg)/max(1, hist_avg)*100,2))
-        except Exception:
-            result["historical_last_year_avg"] = None
-            result["pct_diff"] = None
-    else:
-        result["historical_last_year_avg"] = None
-        result["pct_diff"] = None
-    return result
 
-# -----------------------------
-# Sidebar & Role selection
-# -----------------------------
-st.sidebar.title("Pengaturan")
-role = st.sidebar.radio("Masuk sebagai:", ("UMKM (Viewer)", "Admin (Upload)"))
+def detect_year_month(df: pd.DataFrame):
+    """Mencari kolom tahun & bulan terpisah."""
+    year_col = None
+    month_col = None
+    for col in df.columns:
+        if any(k in col for k in ["tahun", "year", "thn", "th"]):
+            year_col = col
+        if any(k in col for k in ["bulan", "month", "bln", "mon"]):
+            month_col = col
+    return year_col, month_col
 
-st.markdown(f"<div style='background:{CARD_BG}; padding:12px; border-radius:8px'>"
-            f"<h2 style='color:#222;'>Sistem Prediksi Stok Pisang — Bungo Family</h2>"
-            f"<p style='color:#333; margin-top:-10px'>Dashboard visualisasi hasil peramalan SARIMA. UMKM hanya melihat. Admin dapat mengunggah file prediksi.</p>"
-            "</div>", unsafe_allow_html=True)
 
-# -----------------------------
-# ADMIN PAGE
-# -----------------------------
-if role == "Admin (Upload)":
-    st.header("🔐 Halaman Admin — Upload Hasil Prediksi")
-    if "admin_authenticated" not in st.session_state:
-        st.session_state.admin_authenticated = False
+def parse_year_month_to_date(df: pd.DataFrame, year_col: str, month_col: str) -> pd.Series:
+    years = df[year_col]
+    months_raw = df[month_col]
 
-    if not st.session_state.admin_authenticated:
-        pwd = st.text_input("Masukkan password admin:", type="password")
-        if st.button("Login"):
-            if pwd == ADMIN_PASSWORD:
-                st.session_state.admin_authenticated = True
-                st.success("Login berhasil. Anda dapat mengunggah file hasil prediksi.")
-            else:
-                st.error("Password salah. Silakan coba lagi.")
-        st.stop()
+    # Parse tahun jadi angka
+    y = pd.to_numeric(years, errors="coerce")
 
-    st.info("Upload file hasil prediksi (format .xlsx atau .csv). File ini akan disimpan di server aplikasi dan dipakai sebagai sumber data untuk halaman UMKM.")
+    # Kalau banyak tahun < 100, anggap 2000+ (misal 24 -> 2024)
+    if (y < 100).sum() > 0 and (y < 100).sum() >= len(y) * 0.5:
+        y = y.apply(lambda v: 2000 + v if pd.notna(v) else v)
 
-    uploaded = st.file_uploader("Pilih file hasil prediksi (.xlsx/.csv)", type=["xlsx","csv"])
-    if uploaded:
-        ok = save_uploaded_file(uploaded, FORECAST_PATH)
-        if ok:
-            st.success(f"File berhasil diunggah sebagai `{FORECAST_PATH.name}`.")
-            # preview
-            df_preview = load_forecast(FORECAST_PATH)
-            if df_preview is not None:
-                st.subheader("Preview data yang diunggah")
-                st.dataframe(df_preview.reset_index().head(50))
-                st.download_button("⬇️ Download file forecast (server)", data=open(FORECAST_PATH, "rb"), file_name="forecast.xlsx")
-    st.markdown("---")
-    st.subheader("Upload Data Historis (opsional)")
-    hist_file = st.file_uploader("File historical (opsional, beri nama historical.xlsx)", type=["xlsx","csv"], key="hist")
-    if hist_file:
-        ok2 = save_uploaded_file(hist_file, HIST_PATH)
-        if ok2:
-            st.success("Data historis berhasil diunggah.")
-    st.markdown("---")
-    st.write("Catatan:")
-    st.write("- Ganti password admin dengan mengubah variabel ADMIN_PASSWORD di file app.py sebelum deploy jika ingin lebih aman.")
-    st.stop()
+    # Parse bulan (angka atau teks Indonesia)
+    m = pd.to_numeric(months_raw, errors="coerce")
 
-# -----------------------------
-# UMKM VIEWER PAGE
-# -----------------------------
-st.title("📊 Dashboard — UMKM Bungo Family")
-st.markdown("Halaman ini menampilkan hasil prediksi yang diunggah oleh admin. UMKM HANYA MELIHAT. Jika belum ada, hubungi admin.")
+    mask = m.isna() & months_raw.notna()
+    if mask.any():
+        def map_month(x):
+            if pd.isna(x):
+                return math.nan
+            s = str(x).strip().lower()
+            s2 = re.sub(r"[^\w]+$", "", s)  # buang titik/koma di belakang
+            return ID_MONTHS.get(s2, math.nan)
 
-# Load data
-forecast_df = load_forecast(FORECAST_PATH)
-historical_df = load_historical(HIST_PATH)
+        m2 = months_raw[mask].map(map_month)
+        m[mask] = m2
 
-if forecast_df is None:
-    st.warning("Belum ada file prediksi di server. Silakan hubungi admin untuk mengunggah file prediksi.")
-    st.stop()
+    dates = pd.to_datetime(
+        {"year": y, "month": m, "day": 1},
+        errors="coerce",
+    )
+    return dates
 
-# Controls for viewer (simple)
-st.sidebar.markdown("---")
-st.sidebar.header("Pengaturan Tampilan (Viewer)")
-# Ramadan months config (admin/viewer can set)
-ramadan_input = st.sidebar.text_input("Bulan Ramadan (pisahkan koma, default: 4)", value="4")
-try:
-    highlight_months = [int(x.strip()) for x in ramadan_input.split(",") if x.strip().isdigit()]
-except:
-    highlight_months = [4]
 
-# Thresholds for stock alerts
-st.sidebar.markdown("---")
-threshold = st.sidebar.number_input("Ambang stok aman (sisir)", value=200, step=1)
-safety_pct = st.sidebar.number_input("Safety stock (%) untuk rekomendasi", value=10, step=1)
+def parse_sales_excel_from_df(df_raw: pd.DataFrame):
+    """
+    Parser universal:
+    - Deteksi otomatis kolom tanggal / bulan-tahun (termasuk bulan Indonesia).
+    - Hasil akhir: dataframe rapi dengan kolom:
+      [tanggal, jenis (Aktual/Prediksi), sumber, nilai, lower, upper]
+    """
+    df = normalize_columns(df_raw)
 
-# Sidebar navigation
-page = st.sidebar.selectbox("Menu", ["Dashboard Utama", "Grafik", "Tabel Prediksi", "Perbandingan Tahun", "Insight Tren", "Download", "Tentang"])
+    # 1) Cari kolom tanggal langsung
+    date_col, date_series = detect_date_column(df)
 
-# Top metrics
-col1, col2, col3, col4 = st.columns([1.2,1,1,1])
-with col1:
-    st.metric("Periode (baris prediksi)", value=len(forecast_df))
-with col2:
-    st.metric("Rata-rata (sisir/bln)", value=float(np.round(forecast_df["mean"].mean(),2)))
-with col3:
-    # show last forecast value
-    lastv = int(round(forecast_df["mean"].iloc[0])) if len(forecast_df)>0 else "-"
-    st.metric("Prediksi periode terdekat", value=f"{lastv} sisir")
-with col4:
-    st.metric("Theme", value="White / Grey / Yellow")
-
-st.markdown("---")
-
-# Page: Dashboard Utama
-if page == "Dashboard Utama":
-    st.subheader("Grafik utama: Actual vs Forecast (interactive)")
-    fig_main = create_plot(forecast_df, historical_df, highlight_months)
-    st.plotly_chart(fig_main, use_container_width=True)
-
-    st.markdown("**Ringkasan singkat**")
-    st.info(forecast_insights(forecast_df))
-
-    # Stock alert (next period)
-    st.subheader("Peringatan Stok & Rekomendasi")
-    next_idx = forecast_df.index[0] if len(forecast_df)>0 else None
-    if next_idx:
-        next_val = int(round(forecast_df["mean"].iloc[0]))
-        st.write(f"Periode terdekat: **{next_idx.strftime('%B %Y')}** — Prediksi **{next_val} sisir**")
-        if next_val <= threshold:
-            st.warning(f"⚠️ Risiko kekurangan stok! Prediksi {next_val} ≤ ambang {threshold}.")
-            recommended = int(np.ceil(next_val * (1 + safety_pct/100)))
-            st.info(f"Rekomendasi pembelian: **{recommended} sisir** (termasuk safety {safety_pct}%).")
+    # 2) Kalau belum ketemu, coba kombinasikan tahun + bulan
+    if date_series is None:
+        year_col, month_col = detect_year_month(df)
+        if year_col and month_col:
+            dates = parse_year_month_to_date(df, year_col, month_col)
+            date_series = dates
+            date_col = "tanggal"
         else:
-            st.success("Stok diperkirakan cukup berdasarkan ambang yang ditentukan.")
+            # 3) Terakhir, coba semua kolom string yang bisa di-parse ke tanggal
+            best_col = None
+            best_non_na = 0
+            best_parsed = None
+            for col in df.columns:
+                parsed = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
+                non_na = parsed.notna().sum()
+                if non_na > best_non_na:
+                    best_non_na = non_na
+                    best_col = col
+                    best_parsed = parsed
+            if best_parsed is not None and best_non_na >= max(3, len(df) * 0.5):
+                date_col = best_col
+                date_series = best_parsed
+            else:
+                raise ValueError(
+                    "Tidak bisa mengenali kolom tanggal/bulan-tahun di file Excel.\n"
+                    "Pastikan ada kolom tanggal, atau kolom bulan & tahun."
+                )
 
-# Page: Grafik
-elif page == "Grafik":
-    st.subheader("Grafik Interaktif (zoomable)")
-    fig_zoom = create_plot(forecast_df, historical_df, highlight_months)
-    fig_zoom.update_layout(title="Actual vs Forecast (gunakan range slider / zoom)", height=580)
-    st.plotly_chart(fig_zoom, use_container_width=True)
+    # 3) Bersihkan dan sort berdasarkan tanggal
+    df_base = df.copy()
+    df_base["tanggal"] = pd.to_datetime(date_series, errors="coerce")
+    df_base = df_base[df_base["tanggal"].notna()].copy()
+    df_base = df_base.sort_values("tanggal")
 
-# Page: Tabel Prediksi
-elif page == "Tabel Prediksi":
-    st.subheader("Tabel Hasil Prediksi (12 bulan)")
-    st.dataframe(forecast_df.reset_index().rename(columns={'index':'date'}).head(300))
+    # 4) Deteksi kolom numerik yang relevan
+    numeric_cols = [
+        c
+        for c in df_base.columns
+        if c not in ["tanggal", date_col]
+        and pd.api.types.is_numeric_dtype(df_base[c])
+    ]
 
-# Page: Perbandingan Tahun
-elif page == "Perbandingan Tahun":
-    st.subheader("Perbandingan Tahun Sebelumnya vs Rata-rata Prediksi")
-    comp = compare_prev_year(forecast_df, historical_df)
-    st.write(f"- Rata-rata prediksi 12 bln: **{comp['forecast_avg']} sisir/bln**")
-    if comp.get("historical_last_year_avg") is not None:
-        st.write(f"- Rata-rata aktual tahun terakhir: **{comp['historical_last_year_avg']} sisir/bln**")
-        st.write(f"- Perbedaan: **{comp['pct_diff']}%**")
+    # Kolom prediksi (mean, forecast, prediksi)
+    forecast_mean_cols = [
+        c
+        for c in numeric_cols
+        if any(k in c for k in ["mean", "forecast", "prediksi"])
+    ]
+    lower_cols = [
+        c
+        for c in numeric_cols
+        if any(k in c for k in ["lower", "lower_ci", "ci_lower", "bawah"])
+    ]
+    upper_cols = [
+        c
+        for c in numeric_cols
+        if any(k in c for k in ["upper", "upper_ci", "ci_upper", "atas"])
+    ]
+
+    # Kolom penjualan aktual
+    actual_keywords = [
+        "actual", "aktual", "realisasi", "penjualan", "sales",
+        "qty", "jumlah", "volume", "unit",
+    ]
+    actual_cols = [
+        c
+        for c in numeric_cols
+        if any(k in c for k in actual_keywords)
+    ]
+
+    records = []
+
+    # Data aktual
+    for col in actual_cols:
+        for _, row in df_base.iterrows():
+            val = row[col]
+            if pd.isna(val):
+                continue
+            records.append(
+                {
+                    "tanggal": row["tanggal"],
+                    "jenis": "Aktual",
+                    "sumber": col,
+                    "nilai": float(val),
+                    "lower": math.nan,
+                    "upper": math.nan,
+                }
+            )
+
+    # Data prediksi
+    if forecast_mean_cols:
+        mean_col = forecast_mean_cols[0]
+
+        # Cocokkan lower/upper jika ada
+        lower_col = None
+        upper_col = None
+        if lower_cols:
+            lower_col = lower_cols[0]
+        if upper_cols:
+            upper_col = upper_cols[0]
+
+        for _, row in df_base.iterrows():
+            mval = row[mean_col]
+            if pd.isna(mval):
+                continue
+            records.append(
+                {
+                    "tanggal": row["tanggal"],
+                    "jenis": "Prediksi",
+                    "sumber": mean_col,
+                    "nilai": float(mval),
+                    "lower": float(row[lower_col])
+                    if lower_col and not pd.isna(row[lower_col])
+                    else math.nan,
+                    "upper": float(row[upper_col])
+                    if upper_col and not pd.isna(row[upper_col])
+                    else math.nan,
+                }
+            )
+
+    # Fallback: kalau belum ada sama sekali, ambil kolom numerik pertama sebagai "Aktual"
+    if not records and numeric_cols:
+        col = numeric_cols[0]
+        for _, row in df_base.iterrows():
+            val = row[col]
+            if pd.isna(val):
+                continue
+            records.append(
+                {
+                    "tanggal": row["tanggal"],
+                    "jenis": "Aktual",
+                    "sumber": col,
+                    "nilai": float(val),
+                    "lower": math.nan,
+                    "upper": math.nan,
+                }
+            )
+
+    tidy = pd.DataFrame.from_records(records)
+
+    if tidy.empty:
+        raise ValueError(
+            "File Excel berhasil dibaca, tetapi tidak menemukan kolom angka "
+            "untuk penjualan atau prediksi."
+        )
+
+    tidy["tanggal"] = pd.to_datetime(tidy["tanggal"])
+    tidy = tidy.sort_values(["tanggal", "jenis"]).reset_index(drop=True)
+
+    df_actual = tidy[tidy["jenis"] == "Aktual"].copy()
+    df_forecast = tidy[tidy["jenis"] == "Prediksi"].copy()
+
+    return tidy, df_actual, df_forecast
+
+
+def parse_sales_excel(file_path_or_buffer):
+    """
+    Wrapper yang bisa dipakai untuk:
+    - path string / Path
+    - atau file-like (BytesIO) dari st.file_uploader
+    """
+    if isinstance(file_path_or_buffer, (str, Path)):
+        df_raw = pd.read_excel(file_path_or_buffer, engine="openpyxl")
     else:
-        st.info("Data historis tidak tersedia untuk perbandingan. Admin dapat upload `historical.xlsx` jika ingin perbandingan otomatis.")
+        df_raw = pd.read_excel(file_path_or_buffer, engine="openpyxl")
 
-# Page: Insight Tren
-elif page == "Insight Tren":
-    st.subheader("Insight Otomatis & Penjelasan Sederhana")
-    st.write("Penjelasan singkat (bahasa gampang untuk UMKM):")
-    st.markdown(f"- {forecast_insights(forecast_df)}")
-    st.markdown("- **Kenapa angka ini penting?** Karena membantu merencanakan pembelian pisang agar produksi tidak terganggu.")
-    st.markdown("- **Catatan praktis:** Jika prediksi melebihi ambang stok, persiapkan pesanan lebih awal.")
+    return parse_sales_excel_from_df(df_raw)
 
-# Page: Download
-elif page == "Download":
-    st.subheader("Unduh Hasil Prediksi")
-    csv_bytes = forecast_df.to_csv(index=True).encode("utf-8")
-    st.download_button("⬇️ Download sebagai CSV", data=csv_bytes, file_name="prediksi_sarima.csv", mime="text/csv")
-    excel_bytes = df_to_excel_bytes(forecast_df)
-    st.download_button("⬇️ Download sebagai Excel", data=excel_bytes, file_name="prediksi_sarima.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-# Page: Tentang
-elif page == "Tentang":
-    st.subheader("Tentang Sistem")
-    st.markdown("""
-    **Nama Sistem:** Sistem Prediksi Stok Pisang — Bungo Family  
-    **Tujuan:** Menyediakan visualisasi hasil peramalan SARIMA untuk membantu UMKM merencanakan pembelian bahan baku.  
-    **Catatan:** Pemodelan SARIMA dilakukan secara terpisah (Google Colab). Web ini bersifat *display-only*.  
-    """)
-    st.markdown("**Cara update data:** Admin upload file hasil prediksi (admin panel). Jika admin berhenti, pemilik UMKM dapat menunjuk orang lain untuk upload file.")
+# -----------------------------
+# Analisis ringkas otomatis
+# -----------------------------
+def build_summary(tidy: pd.DataFrame) -> str:
+    if tidy.empty:
+        return "Data tidak ditemukan di file Excel."
+
+    df_a = tidy[tidy["jenis"] == "Aktual"].copy()
+    df_p = tidy[tidy["jenis"] == "Prediksi"].copy()
+
+    lines = []
+
+    # --- Ringkasan data aktual ---
+    if not df_a.empty:
+        g = df_a.groupby("tanggal")["nilai"].mean().sort_index()
+        first_date = g.index[0]
+        last_date = g.index[-1]
+        first_val = g.iloc[0]
+        last_val = g.iloc[-1]
+
+        if len(g) >= 13:
+            recent = g.iloc[-12:].mean()
+            prev = (
+                g.iloc[-24:-12].mean()
+                if len(g) >= 24
+                else g.iloc[:-12].mean()
+            )
+            if prev and not pd.isna(prev) and prev != 0:
+                growth = (recent - prev) / prev * 100
+                trend_phrase = "meningkat" if growth > 0 else "menurun"
+                lines.append(
+                    f"Secara umum, rata-rata penjualan aktual {trend_phrase} "
+                    f"sekitar {abs(growth):.1f}% dibanding periode sebelumnya."
+                )
+        else:
+            if first_val and first_val != 0:
+                growth = (last_val - first_val) / first_val * 100
+                trend_phrase = "naik" if growth > 0 else "turun"
+                lines.append(
+                    f"Selama periode {first_date.year}–{last_date.year}, "
+                    f"penjualan aktual {trend_phrase} sekitar {abs(growth):.1f}% "
+                    f"dari awal sampai akhir."
+                )
+
+        idxmax = g.idxmax()
+        vmax = g.max()
+        lines.append(
+            f"Bulan dengan penjualan aktual tertinggi: "
+            f"{month_name_id(idxmax.month)} {idxmax.year} "
+            f"(sekitar {vmax:,.0f} unit)."
+        )
+
+    # --- Ringkasan data prediksi ---
+    if not df_p.empty:
+        gp = df_p.groupby("tanggal")["nilai"].mean().sort_index()
+        start = gp.index[0]
+        end = gp.index[-1]
+        lines.append(
+            f"Ada prediksi penjualan dari "
+            f"{month_name_id(start.month)} {start.year} "
+            f"sampai {month_name_id(end.month)} {end.year}."
+        )
+
+        idxmax = gp.idxmax()
+        vmax = gp.max()
+        lines.append(
+            f"Bulan prediksi tertinggi: "
+            f"{month_name_id(idxmax.month)} {idxmax.year} "
+            f"(sekitar {vmax:,.0f} unit)."
+        )
+
+        if len(gp) >= 2:
+            first_val = gp.iloc[0]
+            last_val = gp.iloc[-1]
+            if first_val and first_val != 0:
+                growth = (last_val - first_val) / first_val * 100
+                trend_phrase = "cenderung naik" if growth > 0 else "cenderung turun"
+                lines.append(
+                    f"Secara garis besar, prediksi {trend_phrase} sekitar "
+                    f"{abs(growth):.1f}% dari awal sampai akhir periode."
+                )
+
+    if not lines:
+        return (
+            "Data berhasil dibaca, namun belum ada kolom penjualan "
+            "yang bisa dianalisis."
+        )
+
+    return " ".join(lines)
+
+
+# -----------------------------
+# Tandai bulan Ramadhan (perkiraan)
+# -----------------------------
+def add_ramadhan_flag(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Menandai bulan Ramadhan secara sederhana:
+    - diasumsikan sekitar bulan Maret–April.
+    Ini hanya highlight visual, bukan perhitungan kalender hijriah yang presisi.
+    """
+    df = df.copy()
+    df["is_ramadhan"] = df["tanggal"].dt.month.isin([3, 4])
+    return df
+
+
+# -----------------------------
+# Grafik utama (historis + forecast)
+# -----------------------------
+def create_main_chart(tidy: pd.DataFrame):
+    if tidy.empty:
+        return None
+
+    df = add_ramadhan_flag(tidy)
+
+    base = alt.Chart(df).encode(
+        x=alt.X("tanggal:T", title="Tanggal"),
+    )
+
+    # Warna & style
+    color_actual = "#1976D2"   # biru
+    color_forecast = "#F9A825" # kuning pisang
+    color_ramadhan = "#FFB300" # oranye-kuning
+
+    # Band confidence interval untuk prediksi
+    band = (
+        base.transform_filter(alt.datum.jenis == "Prediksi")
+        .mark_area(opacity=0.15)
+        .encode(
+            y=alt.Y("lower:Q", title="Penjualan"),
+            y2="upper:Q",
+            color=alt.value(color_forecast),
+        )
+    )
+
+    # Garis aktual
+    line_actual = (
+        base.transform_filter(alt.datum.jenis == "Aktual")
+        .mark_line(strokeWidth=3)
+        .encode(
+            y=alt.Y("nilai:Q", title="Penjualan"),
+            color=alt.value(color_actual),
+            tooltip=[
+                alt.Tooltip("tanggal:T", title="Tanggal"),
+                alt.Tooltip("nilai:Q", title="Aktual", format=",.0f"),
+            ],
+        )
+    )
+
+    # Garis prediksi
+    line_pred = (
+        base.transform_filter(alt.datum.jenis == "Prediksi")
+        .mark_line(strokeDash=[6, 4], strokeWidth=3)
+        .encode(
+            y="nilai:Q",
+            color=alt.value(color_forecast),
+            tooltip=[
+                alt.Tooltip("tanggal:T", title="Tanggal"),
+                alt.Tooltip("nilai:Q", title="Prediksi", format=",.0f"),
+                alt.Tooltip("lower:Q", title="Batas bawah", format=",.0f"),
+                alt.Tooltip("upper:Q", title="Batas atas", format=",.0f"),
+            ],
+        )
+    )
+
+    # Titik highlight Ramadhan
+    ramadhan_points = (
+        base.transform_filter(alt.datum.is_ramadhan == True)
+        .mark_point(size=90, shape="diamond")
+        .encode(
+            y="nilai:Q",
+            color=alt.value(color_ramadhan),
+            tooltip=[
+                alt.Tooltip("tanggal:T", title="Tanggal"),
+                alt.Tooltip("nilai:Q", title="Nilai", format=",.0f"),
+                alt.Tooltip("jenis:N", title="Jenis"),
+            ],
+        )
+    )
+
+    chart = alt.layer(band, line_actual, line_pred, ramadhan_points).resolve_scale(
+        y="shared"
+    )
+
+    return chart.properties(height=420)
+
+
+# -----------------------------
+# Grafik Year-over-Year
+# -----------------------------
+def create_yoy_chart(df_actual: pd.DataFrame):
+    if df_actual is None or df_actual.empty:
+        return None
+
+    df = df_actual.copy()
+    df["tahun"] = df["tanggal"].dt.year.astype(str)
+    df["bulan"] = df["tanggal"].dt.month
+    df["bulan_nama"] = df["bulan"].apply(month_name_id)
+
+    # Hitung rata-rata per bulan per tahun
+    agg = (
+        df.groupby(["tahun", "bulan", "bulan_nama"])["nilai"]
+        .mean()
+        .reset_index()
+        .sort_values(["tahun", "bulan"])
+    )
+
+    if agg["tahun"].nunique() <= 1:
+        # Tidak cukup tahun untuk perbandingan
+        return None
+
+    chart = (
+        alt.Chart(agg)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("bulan_nama:N", title="Bulan", sort=list(ID_MONTH_NAMES.values())),
+            y=alt.Y("nilai:Q", title="Rata-rata penjualan"),
+            color=alt.Color("tahun:N", title="Tahun"),
+            tooltip=[
+                alt.Tooltip("tahun:N", title="Tahun"),
+                alt.Tooltip("bulan_nama:N", title="Bulan"),
+                alt.Tooltip("nilai:Q", title="Rata-rata", format=",.0f"),
+            ],
+        )
+        .properties(height=360)
+    )
+
+    return chart
+
+
+# -----------------------------
+# Sidebar: Pengaturan tampilan
+# -----------------------------
+with st.sidebar:
+    st.markdown("### ⚙️ Pengaturan Tampilan")
+    font_size = st.slider(
+        "Ukuran teks (lebih besar untuk orang tua)",
+        min_value=14,
+        max_value=24,
+        value=18,
+        step=1,
+    )
+    st.markdown(
+        f"""
+        <style>
+        html, body, .stApp {{
+            font-size: {font_size}px;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### 📂 Sumber Data")
+    st.caption(
+        "Data penjualan & prediksi otomatis diambil dari file Excel "
+        "di dalam sistem. UMKM tidak perlu upload file apa pun."
+    )
+
+# -----------------------------
+# Header: Logo + Judul
+# -----------------------------
+st.markdown(
+    """
+    <div class="header-banana">
+      <div class="header-left">
+        <div class="logo-circle">🍌</div>
+        <div class="title-block">
+          <h1>Dashboard Penjualan Pisang</h1>
+          <p>Melihat tren penjualan & prediksi 12 bulan ke depan untuk UMKM</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="tag-pill">Untuk UMKM</div>
+        <div class="tag-pill secondary">Mudah dibaca orang tua</div>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.markdown("---")
-# UAT simple
-st.subheader("Form UAT (untuk dokumentasi pengujian)")
-with st.form("uat_form"):
-    name = st.text_input("Nama penguji (mis: Oom Budi)")
-    ease = st.slider("Kemudahan penggunaan (1=Sulit,5=Mudah)", 1,5,4)
-    clarity = st.slider("Kejelasan informasi (1=Buram,5=Jelas)",1,5,4)
-    useful = st.slider("Kegunaan rekomendasi pembelian (1=Tidak,5=Sangat)",1,5,4)
-    notes = st.text_area("Komentar / saran")
-    submitted = st.form_submit_button("Kirim & Download bukti UAT")
-if submitted:
-    uat_df = pd.DataFrame([{
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "name": name, "ease": ease, "clarity": clarity, "useful": useful, "notes": notes
-    }])
-    st.success("Terima kasih, hasil UAT sudah tercatat. Silakan download.")
-    st.download_button("⬇️ Download Hasil UAT (CSV)", data=uat_df.to_csv(index=False).encode("utf-8"),
-                       file_name=f"uat_{name or 'responden'}.csv", mime="text/csv")
 
-# Footer
-st.markdown("<div style='text-align:center; color:#666; font-size:12px; margin-top:12px'>"
-            "Dibangun menggunakan Streamlit • Hasil prediksi SARIMA diproses terpisah di Google Colab</div>",
-            unsafe_allow_html=True)
+# -----------------------------
+# Load data dari file di repo
+# -----------------------------
+@st.cache_data(show_spinner=True)
+def load_data():
+    excel_path = Path(__file__).parent / "hasil_prediksi_sarima.xlsx"
+    tidy, df_actual, df_forecast = parse_sales_excel(excel_path)
+    return tidy, df_actual, df_forecast
 
+try:
+    tidy, df_actual, df_forecast = load_data()
+except Exception as e:
+    st.error(
+        "Terjadi masalah saat membaca file Excel bawaan. "
+        "Silakan periksa struktur file di repo.\n\n"
+        f"Detail: {e}"
+    )
+    st.stop()
+
+# -----------------------------
+# Ringkasan angka utama
+# -----------------------------
+summary_text = build_summary(tidy)
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    total_points = tidy["tanggal"].nunique()
+    st.metric(label="Jumlah periode dalam data", value=f"{total_points} bulan")
+
+with col2:
+    if not df_actual.empty:
+        last_actual = (
+            df_actual.sort_values("tanggal")
+            .groupby("tanggal")["nilai"]
+            .mean()
+            .iloc[-1]
+        )
+        st.metric(label="Penjualan aktual terbaru", value=f"{last_actual:,.0f}")
+    else:
+        st.metric(
+            label="Penjualan aktual terbaru",
+            value="—",
+            delta="Data aktual belum tersedia",
+        )
+
+with col3:
+    if not df_forecast.empty:
+        first_forecast = (
+            df_forecast.sort_values("tanggal")
+            .groupby("tanggal")["nilai"]
+            .mean()
+            .iloc[0]
+        )
+        st.metric(label="Prediksi awal periode", value=f"{first_forecast:,.0f}")
+    else:
+        st.metric(label="Prediksi awal periode", value="—")
+
+# -----------------------------
+# Info "Aktual vs Prediksi"
+# -----------------------------
+st.info(
+    """
+    **Keterangan grafik:**
+
+    - Garis **biru tebal** = data penjualan **aktual** (riwayat).
+    - Garis **kuning putus-putus** = data **prediksi** 12 bulan ke depan.
+    - Area kuning transparan = batas bawah/atas prediksi.
+    - Titik **berlian** menandai bulan-bulan yang berada di sekitar **Ramadhan (perkiraan)**.
+    """
+)
+
+# -----------------------------
+# Layout utama: grafik & tabel
+# -----------------------------
+left_col, right_col = st.columns([2, 1])
+
+with left_col:
+    st.subheader("Tren penjualan & prediksi 12 bulan")
+    main_chart = create_main_chart(tidy)
+    if main_chart is not None:
+        st.altair_chart(main_chart, use_container_width=True)
+    else:
+        st.warning("Belum ada data untuk ditampilkan di grafik.")
+
+    if not df_actual.empty:
+        st.subheader("Perbandingan tahun ke tahun (Year-over-Year)")
+        yoy_chart = create_yoy_chart(df_actual)
+        if yoy_chart is not None:
+            st.altair_chart(yoy_chart, use_container_width=True)
+        else:
+            st.caption(
+                "Perbandingan tahun ke tahun akan muncul jika data mencakup "
+                "lebih dari satu tahun kalender."
+            )
+
+with right_col:
+    st.subheader("Analisis singkat otomatis")
+    st.markdown(f"<div class='analysis-box'>{summary_text}</div>", unsafe_allow_html=True)
+
+    st.subheader("Unduh data & laporan")
+    # Download data gabungan
+    csv_buffer = tidy.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="📥 Download data (CSV)",
+        data=csv_buffer,
+        file_name="data_penjualan_pisang.csv",
+        mime="text/csv",
+    )
+
+    # Download ringkasan TXT sederhana
+    txt_buffer = summary_text.encode("utf-8")
+    st.download_button(
+        label="📄 Download ringkasan (TXT)",
+        data=txt_buffer,
+        file_name="ringkasan_penjualan_pisang.txt",
+        mime="text/plain",
+    )
+
+# -----------------------------
+# Tabel data sederhana
+# -----------------------------
+with st.expander("Lihat data dalam bentuk tabel (opsional)"):
+    st.dataframe(
+        tidy[["tanggal", "jenis", "nilai", "lower", "upper"]]
+        .sort_values(["tanggal", "jenis"])
+        .rename(
+            columns={
+                "tanggal": "Tanggal",
+                "jenis": "Jenis",
+                "nilai": "Nilai",
+                "lower": "Batas bawah",
+                "upper": "Batas atas",
+            }
+        ),
+        use_container_width=True,
+    )
+
+# -----------------------------
+# Mode admin: upload file lain (opsional)
+# -----------------------------
+with st.expander("Mode admin (opsional) – coba file Excel lain"):
+    st.caption(
+        "Bagian ini untuk pemilik usaha atau admin yang ingin menguji file Excel lain. "
+        "UMKM pengguna utama tidak perlu memakai fitur ini."
+    )
+    uploaded = st.file_uploader(
+        "Upload file Excel baru (opsional)",
+        type=["xlsx", "xls"],
+    )
+    if uploaded is not None:
+        try:
+            tidy_new, act_new, pred_new = parse_sales_excel(uploaded)
+            st.success("File berhasil dibaca dengan parser universal.")
+            st.dataframe(
+                tidy_new.head(50),
+                use_container_width=True,
+            )
+        except Exception as e:
+            st.error(f"Gagal membaca file: {e}")
