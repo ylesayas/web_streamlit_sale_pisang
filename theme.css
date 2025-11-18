@@ -1,84 +1,93 @@
-/* ---------------- GLOBAL BACKGROUND --------------- */
+/* ---------- GLOBAL BACKGROUND ---------- */
 .stApp {
-    background: linear-gradient(180deg, #FFF7D1 0%, #FFE9A9 40%, #FFD67A 100%);
-    background-attachment: fixed;
+    background-color: #ffffff !important;   /* putih bersih */
     font-family: 'Segoe UI', sans-serif;
 }
 
-/* ---------------- HEADER BANNER --------------- */
+/* ---------- MINI BANANA ICON BACKGROUND ---------- */
+body::before {
+    content: "";
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 120px;
+    height: 120px;
+    background-image: url("https://i.ibb.co/SrjsfLN/banana-small.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.25;                 /* soft, tidak ganggu */
+    pointer-events: none;
+}
+
+/* ---------- HEADER AREA ---------- */
 .banana-header {
-    padding: 25px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #FFDA74, #FFC447);
-    box-shadow: 0px 4px 15px rgba(0,0,0,0.15);
+    padding: 18px;
+    border-radius: 16px;
+    background: #FFF8D6;           /* kuning sangat lembut */
+    border: 1px solid #F3E1A6;
     text-align: center;
-    margin-bottom: 30px;
-    border: 2px solid #F1C14F;
+    margin-bottom: 25px;
 }
 
 .banana-header h1 {
-    color: #7A4E00;
-    font-weight: 900;
-    font-size: 36px;
+    color: #6B4E16;
     margin: 0;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    font-weight: 800;
 }
 
 .banana-header p {
-    color: #5A3904;
-    font-size: 18px;
-    margin-top: 10px;
+    color: #8A6A2F;
+    font-size: 16px;
 }
 
-/* ---------------- CARD STYLE ---------------- */
+/* ---------- CARD STYLE (kontainer data) ---------- */
 .banana-card {
-    background-color: #FFF3C9;
-    border-radius: 18px;
-    padding: 20px;
-    border: 2px solid #FFD980;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-    margin-bottom: 20px;
+    background-color: #ffffff;
+    border-radius: 14px;
+    padding: 18px;
+    border: 1px solid #F6E9B5;     /* kuning halus elegan */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    margin-bottom: 18px;
 }
 
 .banana-card h3 {
-    color: #8B5A2B;
-    font-weight: 800;
-    margin-bottom: 10px;
+    color: #7A551E;
+    font-weight: 700;
 }
 
 .banana-card p {
-    color: #5A3D1E;
+    color: #5A4630;
 }
 
-/* ---------------- INPUT FIELD STYLE ---------------- */
-div[data-testid="stFileUploader"], 
-div[data-testid="stTextInput"], 
+/* ---------- INPUT FIELD ---------- */
+div[data-testid="stFileUploader"],
+div[data-testid="stTextInput"],
 div[data-testid="stNumberInput"],
 div[data-testid="stSelectbox"] {
-    background-color: #FFF8E7 !important;
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid #EECE8F !important;
+    background-color: #FFFDF3;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #F5E5A9 !important;
 }
 
-/* ---------------- BUTTON ---------------- */
+/* ---------- BUTTON STYLE ---------- */
 .stButton>button {
-    background: linear-gradient(90deg, #FFC83D, #FFB300);
-    color: #4e3100;
+    background: #FFE89A;               /* soft yellow */
+    color: #6B4E16;
     font-weight: 700;
-    border-radius: 12px;
-    padding: 10px 20px;
-    border: 1px solid #E0A437;
+    border-radius: 10px;
+    padding: 8px 20px;
+    border: 1px solid #F0D88A;
     transition: 0.2s;
 }
 
 .stButton>button:hover {
-    background: linear-gradient(90deg, #FFD146, #FFBF00);
-    transform: scale(1.05);
+    background: #FFD96E;
+    transform: translateY(-2px);
 }
 
-/* ---------------- SIDEBAR ---------------- */
+/* ---------- SIDEBAR ---------- */
 .css-1d391kg {
-    background: #FFF2C5 !important;
-    border-right: 2px solid #FFD980;
+    background: #FFF8D6 !important;    /* sidebar kuning lembut */
+    border-right: 1px solid #F1DF9C;
 }
