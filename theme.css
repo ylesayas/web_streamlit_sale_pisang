@@ -1,0 +1,84 @@
+/* ---------------- GLOBAL BACKGROUND --------------- */
+.stApp {
+    background: linear-gradient(180deg, #FFF7D1 0%, #FFE9A9 40%, #FFD67A 100%);
+    background-attachment: fixed;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ---------------- HEADER BANNER --------------- */
+.banana-header {
+    padding: 25px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #FFDA74, #FFC447);
+    box-shadow: 0px 4px 15px rgba(0,0,0,0.15);
+    text-align: center;
+    margin-bottom: 30px;
+    border: 2px solid #F1C14F;
+}
+
+.banana-header h1 {
+    color: #7A4E00;
+    font-weight: 900;
+    font-size: 36px;
+    margin: 0;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+}
+
+.banana-header p {
+    color: #5A3904;
+    font-size: 18px;
+    margin-top: 10px;
+}
+
+/* ---------------- CARD STYLE ---------------- */
+.banana-card {
+    background-color: #FFF3C9;
+    border-radius: 18px;
+    padding: 20px;
+    border: 2px solid #FFD980;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    margin-bottom: 20px;
+}
+
+.banana-card h3 {
+    color: #8B5A2B;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.banana-card p {
+    color: #5A3D1E;
+}
+
+/* ---------------- INPUT FIELD STYLE ---------------- */
+div[data-testid="stFileUploader"], 
+div[data-testid="stTextInput"], 
+div[data-testid="stNumberInput"],
+div[data-testid="stSelectbox"] {
+    background-color: #FFF8E7 !important;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #EECE8F !important;
+}
+
+/* ---------------- BUTTON ---------------- */
+.stButton>button {
+    background: linear-gradient(90deg, #FFC83D, #FFB300);
+    color: #4e3100;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 10px 20px;
+    border: 1px solid #E0A437;
+    transition: 0.2s;
+}
+
+.stButton>button:hover {
+    background: linear-gradient(90deg, #FFD146, #FFBF00);
+    transform: scale(1.05);
+}
+
+/* ---------------- SIDEBAR ---------------- */
+.css-1d391kg {
+    background: #FFF2C5 !important;
+    border-right: 2px solid #FFD980;
+}
