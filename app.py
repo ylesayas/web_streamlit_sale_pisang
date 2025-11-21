@@ -1,8 +1,6 @@
 import math
 from pathlib import Path
-from io import BytesIO
 import re
-from datetime import datetime
 
 import pandas as pd
 import streamlit as st
@@ -27,7 +25,6 @@ def load_local_css(file_name: str = "theme.css") -> None:
             css = f.read()
         st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
-        # Kalau CSS belum ada, biarkan saja (app tetap jalan)
         pass
 
 load_local_css()
@@ -43,7 +40,6 @@ if "auth" not in st.session_state:
 
 
 def login_screen():
-    # Pakai header-banana supaya halaman masuk lebih menarik
     st.markdown(
         """
         <div class="header-banana" style="margin-top: 2rem; margin-bottom: 1.5rem;">
@@ -76,12 +72,10 @@ def login_screen():
             st.error("PIN salah. Coba lagi.")
 
 
-# Kalau belum login, tampilkan layar PIN dulu
 if st.session_state.auth is None:
     login_screen()
     st.stop()
 
-# Penanda mode
 MODE_ADMIN = st.session_state.auth == "admin"
 MODE_UMKM = st.session_state.auth == "umkm"
 
@@ -169,13 +163,11 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def detect_date_column(df: pd.DataFrame):
-    # 1) Kolom yang sudah datetime
     for col in df.columns:
         if pd.api.types.is_datetime64_any_dtype(df[col]):
             if df[col].notna().sum() >= max(3, len(df) * 0.5):
                 return col, df[col]
 
-    # 2) Kolom dengan kata kunci tanggal/periode
     date_keywords = [
         "tanggal",
         "tgl",
@@ -215,11 +207,9 @@ def parse_year_month_to_date(
 
     y = pd.to_numeric(years, errors="coerce")
 
-    # Kalau banyak tahun < 100, anggap 2000+ (misal 24 -> 2024)
     if (y < 100).sum() > 0 and (y < 100).sum() >= len(y) * 0.5:
         y = y.apply(lambda v: 2000 + v if pd.notna(v) else v)
 
-    # Parse bulan (angka atau teks Indonesia)
     m = pd.to_numeric(months_raw, errors="coerce")
 
     mask = m.isna() & months_raw.notna()
@@ -229,7 +219,7 @@ def parse_year_month_to_date(
             if pd.isna(x):
                 return math.nan
             s = str(x).strip().lower()
-            s2 = re.sub(r"[^\w]+$", "", s)  # buang titik/koma di belakang
+            s2 = re.sub(r"[^\w]+$", "", s)
             return ID_MONTHS.get(s2, math.nan)
 
         m2 = months_raw[mask].map(map_month)
@@ -240,18 +230,10 @@ def parse_year_month_to_date(
 
 
 def parse_sales_excel_from_df(df_raw: pd.DataFrame):
-    """
-    Parser universal:
-    - Deteksi otomatis kolom tanggal / bulan-tahun (termasuk bulan Indonesia).
-    - Hasil akhir: dataframe rapi dengan kolom:
-      [tanggal, jenis (Aktual/Prediksi), sumber, nilai, lower, upper]
-    """
     df = normalize_columns(df_raw)
 
-    # 1) Cari kolom tanggal langsung
     date_col, date_series = detect_date_column(df)
 
-    # 2) Kalau belum ketemu, coba kombinasikan tahun + bulan
     if date_series is None:
         year_col, month_col = detect_year_month(df)
         if year_col and month_col:
@@ -259,7 +241,6 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
             date_series = dates
             date_col = "tanggal"
         else:
-            # 3) Terakhir, coba semua kolom string yang bisa di-parse ke tanggal
             best_col = None
             best_non_na = 0
             best_parsed = None
@@ -279,13 +260,11 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
                     "Pastikan ada kolom tanggal, atau kolom bulan dan tahun."
                 )
 
-    # 3) Bersihkan dan sort berdasarkan tanggal
     df_base = df.copy()
     df_base["tanggal"] = pd.to_datetime(date_series, errors="coerce")
     df_base = df_base[df_base["tanggal"].notna()].copy()
     df_base = df_base.sort_values("tanggal")
 
-    # 4) Deteksi kolom numerik yang relevan
     numeric_cols = [
         c
         for c in df_base.columns
@@ -293,7 +272,6 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
         and pd.api.types.is_numeric_dtype(df_base[c])
     ]
 
-    # Kolom prediksi (mean, forecast, prediksi)
     forecast_mean_cols = [
         c for c in numeric_cols if any(k in c for k in ["mean", "forecast", "prediksi"])
     ]
@@ -308,7 +286,6 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
         if any(k in c for k in ["upper", "upper_ci", "ci_upper", "atas"])
     ]
 
-    # Kolom penjualan aktual
     actual_keywords = [
         "actual",
         "aktual",
@@ -326,7 +303,6 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
 
     records = []
 
-    # Data aktual
     for col in actual_cols:
         for _, row in df_base.iterrows():
             val = row[col]
@@ -343,7 +319,6 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
                 }
             )
 
-    # Data prediksi
     if forecast_mean_cols:
         mean_col = forecast_mean_cols[0]
 
@@ -373,7 +348,6 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
                 }
             )
 
-    # Fallback: ambil kolom numerik pertama sebagai aktual
     if not records and numeric_cols:
         col = numeric_cols[0]
         for _, row in df_base.iterrows():
@@ -409,9 +383,6 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
 
 
 def parse_sales_excel(file_path_or_buffer):
-    """
-    Bisa menerima path string / Path atau file-like dari uploader.
-    """
     if isinstance(file_path_or_buffer, (str, Path)):
         df_raw = pd.read_excel(file_path_or_buffer, engine="openpyxl")
     else:
@@ -432,7 +403,6 @@ def build_summary(tidy: pd.DataFrame) -> str:
 
     lines = []
 
-    # Ringkasan data aktual
     if not df_a.empty:
         g = df_a.groupby("tanggal")["nilai"].mean().sort_index()
         first_date = g.index[0]
@@ -472,7 +442,6 @@ def build_summary(tidy: pd.DataFrame) -> str:
             f"(sekitar {vmax:,.0f} unit)."
         )
 
-    # Ringkasan data prediksi
     if not df_p.empty:
         gp = df_p.groupby("tanggal")["nilai"].mean().sort_index()
         start = gp.index[0]
@@ -512,13 +481,41 @@ def build_summary(tidy: pd.DataFrame) -> str:
 
 
 # -----------------------------
+# Saran untuk UMKM
+# -----------------------------
+def build_umkm_advice(df_forecast: pd.DataFrame) -> str:
+    if df_forecast is None or df_forecast.empty:
+        return "Belum ada data prediksi untuk dibuatkan saran."
+
+    g = df_forecast.sort_values("tanggal")
+
+    peak = g.loc[g["nilai"].idxmax()]
+    low = g.loc[g["nilai"].idxmin()]
+
+    saran = []
+
+    saran.append(
+        f"Bulan paling ramai: {peak['tanggal'].strftime('%B %Y')}, "
+        f"sekitar {int(peak['nilai'])} sisir."
+    )
+
+    saran.append(
+        f"Bulan paling sepi: {low['tanggal'].strftime('%B %Y')}, "
+        f"hanya sekitar {int(low['nilai'])} sisir."
+    )
+
+    saran.append(
+        "Pemilik usaha dapat menambah pembelian pisang menjelang bulan ramai "
+        "dan mengurangi pembelian di bulan yang sepi agar tidak ada sisa bahan."
+    )
+
+    return " ".join(saran)
+
+
+# -----------------------------
 # Tandai bulan Ramadhan (perkiraan)
 # -----------------------------
 def add_ramadhan_flag(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Tandai bulan Ramadhan secara sederhana:
-    diasumsikan sekitar bulan Maret–April.
-    """
     df = df.copy()
     df["is_ramadhan"] = df["tanggal"].dt.month.isin([3, 4])
     return df
@@ -537,9 +534,9 @@ def create_main_chart(tidy: pd.DataFrame):
         x=alt.X("tanggal:T", title="Tanggal"),
     )
 
-    color_actual = "#1976D2"   # biru
-    color_forecast = "#F9A825" # kuning pisang
-    color_ramadhan = "#FFB300" # oranye-kuning
+    color_actual = "#1976D2"
+    color_forecast = "#F9A825"
+    color_ramadhan = "#FFB300"
 
     band = (
         base.transform_filter(alt.datum.jenis == "Prediksi")
@@ -601,7 +598,7 @@ def create_main_chart(tidy: pd.DataFrame):
 
 
 # -----------------------------
-# Grafik Year-over-Year
+# Grafik Year-over-Year (opsional, hanya jika ada data aktual)
 # -----------------------------
 def create_yoy_chart(df_actual: pd.DataFrame):
     if df_actual is None or df_actual.empty:
@@ -719,13 +716,12 @@ st.markdown(
 
 st.markdown("---")
 
-# (opsional) Profil usaha sederhana
 st.markdown(
     """
     <div class="analysis-box" style="margin-top:0.3rem; margin-bottom:1rem;">
       <b>Profil usaha</b><br/>
       Nama usaha: UMKM Pisang Sejahtera<br/>
-      Lokasi: (isi sesuai kebutuhan)<br/>
+      Lokasi: (sesuaikan dengan data asli)<br/>
       Jenis produk: Olahan pisang
     </div>
     """,
@@ -733,7 +729,7 @@ st.markdown(
 )
 
 # -----------------------------
-# Mode admin: kelola data Excel di bagian atas
+# Mode admin: kelola data Excel
 # -----------------------------
 if MODE_ADMIN:
     st.subheader("Kelola data Excel (Admin)")
@@ -778,7 +774,6 @@ except Exception as e:
     )
     st.stop()
 
-
 # -----------------------------
 # Ringkasan angka utama
 # -----------------------------
@@ -787,58 +782,42 @@ summary_text = build_summary(tidy)
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    total_points = tidy["tanggal"].nunique()
-    st.metric(label="Jumlah bulan dalam data", value=f"{total_points} bulan")
+    total_pred = df_forecast["tanggal"].nunique()
+    st.metric("Periode prediksi", f"{total_pred} bulan")
 
 with col2:
-    if not df_actual.empty:
-        last_actual = (
-            df_actual.sort_values("tanggal")
-            .groupby("tanggal")["nilai"]
-            .mean()
-            .iloc[-1]
-        )
-        st.metric(label="Penjualan aktual terbaru", value=f"{last_actual:,.0f}")
-    else:
+    if not df_forecast.empty:
+        peak = df_forecast.loc[df_forecast["nilai"].idxmax()]
         st.metric(
-            label="Penjualan aktual terbaru",
-            value="—",
-            delta="Data aktual belum tersedia",
+            "Bulan tertinggi",
+            f"{int(peak['nilai'])} unit",
+            peak["tanggal"].strftime("%B %Y"),
         )
+    else:
+        st.metric("Bulan tertinggi", "–")
 
 with col3:
     if not df_forecast.empty:
-        first_forecast = (
-            df_forecast.sort_values("tanggal")
-            .groupby("tanggal")["nilai"]
-            .mean()
-            .iloc[0]
-        )
-        st.metric(
-            label="Perkiraan penjualan bulan pertama",
-            value=f"{first_forecast:,.0f}",
-        )
+        first_f = df_forecast.sort_values("tanggal")["nilai"].iloc[0]
+        st.metric("Penjualan bulan pertama", f"{int(first_f)} unit")
     else:
-        st.metric("Perkiraan penjualan bulan pertama", "—")
-
+        st.metric("Penjualan bulan pertama", "–")
 
 # -----------------------------
-# Info "Aktual vs Prediksi"
+# Info grafik
 # -----------------------------
 st.info(
     """
-    Keterangan grafik:
+**Keterangan grafik:**
 
-    - Garis biru tebal = data penjualan aktual (riwayat).
-    - Garis kuning putus-putus = data prediksi 12 bulan ke depan.
-    - Area kuning transparan = batas bawah dan batas atas prediksi.
-    - Titik berbentuk berlian menandai bulan-bulan di sekitar Ramadhan (perkiraan).
-    """
+• Garis kuning = prediksi penjualan 12 bulan  
+• Area kuning = batas bawah dan batas atas prediksi  
+• Titik berbentuk berlian = bulan sekitar Ramadan (perkiraan)  
+"""
 )
 
-
 # -----------------------------
-# Layout utama: grafik & tabel
+# Layout utama: grafik & panel kanan
 # -----------------------------
 left_col, right_col = st.columns([2, 1])
 
@@ -850,18 +829,14 @@ with left_col:
     else:
         st.warning("Belum ada data untuk ditampilkan di grafik.")
 
-    if not df_actual.empty:
-        st.subheader("Perbandingan penjualan antar tahun")
-        yoy_chart = create_yoy_chart(df_actual)
-        if yoy_chart is not None:
-            st.altair_chart(yoy_chart, use_container_width=True)
-        else:
-            st.caption(
-                "Perbandingan antar tahun akan muncul jika data mencakup "
-                "lebih dari satu tahun kalender."
-            )
-
 with right_col:
+    st.subheader("Saran untuk UMKM")
+    umkm_text = build_umkm_advice(df_forecast)
+    st.markdown(
+        f"<div class='analysis-box'>{umkm_text}</div>",
+        unsafe_allow_html=True,
+    )
+
     st.subheader("Analisis singkat otomatis")
     st.markdown(
         f"<div class='analysis-box'>{summary_text}</div>",
@@ -885,19 +860,16 @@ with right_col:
         mime="text/plain",
     )
 
-
 # -----------------------------
-# Tabel data sederhana
+# Tabel data prediksi
 # -----------------------------
-with st.expander("Lihat data dalam bentuk tabel (opsional)"):
+with st.expander("Lihat data prediksi (tabel)"):
     st.dataframe(
-        tidy[["tanggal", "jenis", "nilai", "lower", "upper"]]
-        .sort_values(["tanggal", "jenis"])
+        df_forecast[["tanggal", "nilai", "lower", "upper"]]
         .rename(
             columns={
                 "tanggal": "Tanggal",
-                "jenis": "Jenis",
-                "nilai": "Nilai",
+                "nilai": "Prediksi",
                 "lower": "Batas bawah",
                 "upper": "Batas atas",
             }
