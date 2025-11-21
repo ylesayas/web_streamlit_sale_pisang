@@ -17,6 +17,21 @@ st.set_page_config(
     layout="wide",
 )
 
+# -----------------------------
+# Load CSS eksternal
+# -----------------------------
+def load_local_css(file_name: str = "theme.css") -> None:
+    try:
+        css_path = Path(__file__).parent / file_name
+        with css_path.open() as f:
+            css = f.read()
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        # Kalau CSS belum ada, biarkan saja (app tetap jalan)
+        pass
+
+load_local_css()
+
 # ==========================
 # SISTEM PIN (UMKM + ADMIN)
 # ==========================
@@ -28,8 +43,25 @@ if "auth" not in st.session_state:
 
 
 def login_screen():
-    st.title("🔐 Halaman Masuk")
-    st.write("Masukkan kode akses untuk membuka dashboard penjualan pisang.")
+    # Pakai header-banana supaya halaman masuk lebih menarik
+    st.markdown(
+        """
+        <div class="header-banana" style="margin-top: 2rem; margin-bottom: 1.5rem;">
+          <div class="header-left">
+            <div class="logo-circle">🍌</div>
+            <div class="title-block">
+              <h1>Halaman Masuk Dashboard</h1>
+              <p>Masukkan kode akses yang diberikan untuk melihat laporan penjualan pisang.</p>
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.write(
+        "Kode akses ini hanya untuk pemilik usaha dan peneliti yang berwenang."
+    )
 
     pin = st.text_input("Kode PIN", type="password")
 
@@ -52,22 +84,6 @@ if st.session_state.auth is None:
 # Penanda mode
 MODE_ADMIN = st.session_state.auth == "admin"
 MODE_UMKM = st.session_state.auth == "umkm"
-
-# -----------------------------
-# Load CSS eksternal
-# -----------------------------
-def load_local_css(file_name: str = "theme.css") -> None:
-    try:
-        css_path = Path(__file__).parent / file_name
-        with css_path.open() as f:
-            css = f.read()
-        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        # Kalau CSS belum ada, biarkan saja
-        pass
-
-
-load_local_css()
 
 # -----------------------------
 # Helper: Nama bulan Indonesia
@@ -199,9 +215,11 @@ def parse_year_month_to_date(
 
     y = pd.to_numeric(years, errors="coerce")
 
+    # Kalau banyak tahun < 100, anggap 2000+ (misal 24 -> 2024)
     if (y < 100).sum() > 0 and (y < 100).sum() >= len(y) * 0.5:
         y = y.apply(lambda v: 2000 + v if pd.notna(v) else v)
 
+    # Parse bulan (angka atau teks Indonesia)
     m = pd.to_numeric(months_raw, errors="coerce")
 
     mask = m.isna() & months_raw.notna()
@@ -211,7 +229,7 @@ def parse_year_month_to_date(
             if pd.isna(x):
                 return math.nan
             s = str(x).strip().lower()
-            s2 = re.sub(r"[^\w]+$", "", s)
+            s2 = re.sub(r"[^\w]+$", "", s)  # buang titik/koma di belakang
             return ID_MONTHS.get(s2, math.nan)
 
         m2 = months_raw[mask].map(map_month)
@@ -222,10 +240,18 @@ def parse_year_month_to_date(
 
 
 def parse_sales_excel_from_df(df_raw: pd.DataFrame):
+    """
+    Parser universal:
+    - Deteksi otomatis kolom tanggal / bulan-tahun (termasuk bulan Indonesia).
+    - Hasil akhir: dataframe rapi dengan kolom:
+      [tanggal, jenis (Aktual/Prediksi), sumber, nilai, lower, upper]
+    """
     df = normalize_columns(df_raw)
 
+    # 1) Cari kolom tanggal langsung
     date_col, date_series = detect_date_column(df)
 
+    # 2) Kalau belum ketemu, coba kombinasikan tahun + bulan
     if date_series is None:
         year_col, month_col = detect_year_month(df)
         if year_col and month_col:
@@ -233,6 +259,7 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
             date_series = dates
             date_col = "tanggal"
         else:
+            # 3) Terakhir, coba semua kolom string yang bisa di-parse ke tanggal
             best_col = None
             best_non_na = 0
             best_parsed = None
@@ -252,11 +279,13 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
                     "Pastikan ada kolom tanggal, atau kolom bulan dan tahun."
                 )
 
+    # 3) Bersihkan dan sort berdasarkan tanggal
     df_base = df.copy()
     df_base["tanggal"] = pd.to_datetime(date_series, errors="coerce")
     df_base = df_base[df_base["tanggal"].notna()].copy()
     df_base = df_base.sort_values("tanggal")
 
+    # 4) Deteksi kolom numerik yang relevan
     numeric_cols = [
         c
         for c in df_base.columns
@@ -264,6 +293,7 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
         and pd.api.types.is_numeric_dtype(df_base[c])
     ]
 
+    # Kolom prediksi (mean, forecast, prediksi)
     forecast_mean_cols = [
         c for c in numeric_cols if any(k in c for k in ["mean", "forecast", "prediksi"])
     ]
@@ -278,6 +308,7 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
         if any(k in c for k in ["upper", "upper_ci", "ci_upper", "atas"])
     ]
 
+    # Kolom penjualan aktual
     actual_keywords = [
         "actual",
         "aktual",
@@ -295,6 +326,7 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
 
     records = []
 
+    # Data aktual
     for col in actual_cols:
         for _, row in df_base.iterrows():
             val = row[col]
@@ -311,6 +343,7 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
                 }
             )
 
+    # Data prediksi
     if forecast_mean_cols:
         mean_col = forecast_mean_cols[0]
 
@@ -340,6 +373,7 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
                 }
             )
 
+    # Fallback: ambil kolom numerik pertama sebagai aktual
     if not records and numeric_cols:
         col = numeric_cols[0]
         for _, row in df_base.iterrows():
@@ -375,6 +409,9 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
 
 
 def parse_sales_excel(file_path_or_buffer):
+    """
+    Bisa menerima path string / Path atau file-like dari uploader.
+    """
     if isinstance(file_path_or_buffer, (str, Path)):
         df_raw = pd.read_excel(file_path_or_buffer, engine="openpyxl")
     else:
@@ -395,6 +432,7 @@ def build_summary(tidy: pd.DataFrame) -> str:
 
     lines = []
 
+    # Ringkasan data aktual
     if not df_a.empty:
         g = df_a.groupby("tanggal")["nilai"].mean().sort_index()
         first_date = g.index[0]
@@ -434,6 +472,7 @@ def build_summary(tidy: pd.DataFrame) -> str:
             f"(sekitar {vmax:,.0f} unit)."
         )
 
+    # Ringkasan data prediksi
     if not df_p.empty:
         gp = df_p.groupby("tanggal")["nilai"].mean().sort_index()
         start = gp.index[0]
@@ -476,6 +515,10 @@ def build_summary(tidy: pd.DataFrame) -> str:
 # Tandai bulan Ramadhan (perkiraan)
 # -----------------------------
 def add_ramadhan_flag(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Tandai bulan Ramadhan secara sederhana:
+    diasumsikan sekitar bulan Maret–April.
+    """
     df = df.copy()
     df["is_ramadhan"] = df["tanggal"].dt.month.isin([3, 4])
     return df
@@ -494,9 +537,9 @@ def create_main_chart(tidy: pd.DataFrame):
         x=alt.X("tanggal:T", title="Tanggal"),
     )
 
-    color_actual = "#1976D2"
-    color_forecast = "#F9A825"
-    color_ramadhan = "#FFB300"
+    color_actual = "#1976D2"   # biru
+    color_forecast = "#F9A825" # kuning pisang
+    color_ramadhan = "#FFB300" # oranye-kuning
 
     band = (
         base.transform_filter(alt.datum.jenis == "Prediksi")
@@ -676,6 +719,44 @@ st.markdown(
 
 st.markdown("---")
 
+# (opsional) Profil usaha sederhana
+st.markdown(
+    """
+    <div class="analysis-box" style="margin-top:0.3rem; margin-bottom:1rem;">
+      <b>Profil usaha</b><br/>
+      Nama usaha: UMKM Pisang Sejahtera<br/>
+      Lokasi: (isi sesuai kebutuhan)<br/>
+      Jenis produk: Olahan pisang
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# -----------------------------
+# Mode admin: kelola data Excel di bagian atas
+# -----------------------------
+if MODE_ADMIN:
+    st.subheader("Kelola data Excel (Admin)")
+    st.caption(
+        "Bagian ini hanya untuk peneliti atau pemilik usaha jika ingin menguji "
+        "atau memperbarui data. Pengguna UMKM tidak perlu membuka bagian ini."
+    )
+    uploaded = st.file_uploader(
+        "Upload file Excel baru (opsional)",
+        type=["xlsx", "xls"],
+    )
+    if uploaded is not None:
+        try:
+            tidy_new, act_new, pred_new = parse_sales_excel(uploaded)
+            st.success("File berhasil dibaca dengan parser universal.")
+            st.dataframe(
+                tidy_new.head(50),
+                use_container_width=True,
+            )
+        except Exception as e:
+            st.error(f"Gagal membaca file: {e}")
+
+st.markdown("---")
 
 # -----------------------------
 # Load data dari file di repo
@@ -823,28 +904,3 @@ with st.expander("Lihat data dalam bentuk tabel (opsional)"):
         ),
         use_container_width=True,
     )
-
-
-# -----------------------------
-# Mode admin: upload file lain (hanya admin)
-# -----------------------------
-if MODE_ADMIN:
-    st.subheader("Kelola data Excel (Admin)")
-    st.caption(
-        "Fitur ini hanya untuk peneliti atau pemilik usaha jika ingin menguji "
-        "atau memperbarui data. Pengguna UMKM tidak perlu membuka bagian ini."
-    )
-    uploaded = st.file_uploader(
-        "Upload file Excel baru (opsional)",
-        type=["xlsx", "xls"],
-    )
-    if uploaded is not None:
-        try:
-            tidy_new, act_new, pred_new = parse_sales_excel(uploaded)
-            st.success("File berhasil dibaca dengan parser universal.")
-            st.dataframe(
-                tidy_new.head(50),
-                use_container_width=True,
-            )
-        except Exception as e:
-            st.error(f"Gagal membaca file: {e}")
