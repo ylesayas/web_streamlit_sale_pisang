@@ -10,6 +10,61 @@ import streamlit as st
 # Optional: Altair untuk grafik (sudah ikut di Streamlit)
 import altair as alt
 
+import math
+from pathlib import Path
+from io import BytesIO
+import re
+from datetime import datetime
+
+import pandas as pd
+import streamlit as st
+
+# Optional: Altair untuk grafik (sudah ikut di Streamlit)
+import altair as alt
+
+# ==========================
+# SISTEM PIN (UMKM + ADMIN)
+# ==========================
+PIN_UMKM = "5454"
+PIN_ADMIN = "0708"
+
+if "auth" not in st.session_state:
+    st.session_state.auth = None  # None / "umkm" / "admin"
+
+def login_screen():
+    st.title("🔐 Halaman Masuk")
+    st.write("Masukkan kode akses untuk membuka dashboard.")
+    pin = st.text_input("Kode PIN", type="password")
+
+    if st.button("Masuk"):
+        if pin == PIN_UMKM:
+            st.session_state.auth = "umkm"
+            st.rerun()
+        elif pin == PIN_ADMIN:
+            st.session_state.auth = "admin"
+            st.rerun()
+        else:
+            st.error("PIN salah. Coba lagi.")
+
+# Kalau belum login, tampilkan layar PIN dulu
+if st.session_state.auth is None:
+    login_screen()
+    st.stop()
+
+# Penanda mode
+MODE_ADMIN = st.session_state.auth == "admin"
+MODE_UMKM = st.session_state.auth == "umkm"
+
+# -----------------------------
+# Konfigurasi halaman
+# -----------------------------
+st.set_page_config(
+    page_title="Dashboard Penjualan Pisang",
+    page_icon="🍌",
+    layout="wide",
+)
+
+
 # -----------------------------
 # Konfigurasi halaman
 # -----------------------------
