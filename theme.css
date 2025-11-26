@@ -342,3 +342,39 @@ p, label, span, li {
         justify-content: flex-start;
     }
 }
+
+/* ===========================
+   TOMBOL DI FORM PROFIL UMKM
+   =========================== */
+
+/* Gaya umum semua tombol di dalam form profil */
+[data-testid="stForm"] .stButton > button {
+  border-radius: 999px;
+  padding: 0.6rem 1.4rem;
+  font-weight: 600;
+  min-width: 180px;
+}
+
+/* Tombol kiri: "Simpan profil & buka dashboard" (primary) */
+[data-testid="stForm"] .stButton:first-child button {
+  background: #FCE97B;         /* kuning pastel */
+  color: #203258;              /* navy keabu */
+  border: none;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.04);
+}
+
+[data-testid="stForm"] .stButton:first-child button:hover {
+  background: #FBE36A;
+}
+
+/* Tombol kanan: "Lewati & buka dashboard" (secondary, tidak putih pucat) */
+[data-testid="stForm"] .stButton:last-child button {
+  background: #F4F4F6;         /* abu muda lembut, bukan putih */
+  color: #203258;
+  border: 1px solid rgba(32, 50, 88, 0.18);
+  box-shadow: none;
+}
+
+[data-testid="stForm"] .stButton:last-child button:hover {
+  background: #E9E9EE;
+}
