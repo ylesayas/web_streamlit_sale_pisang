@@ -27,6 +27,7 @@ def load_local_css(file_name: str = "theme.css") -> None:
     except FileNotFoundError:
         pass
 
+
 load_local_css()
 
 # ==========================
@@ -40,6 +41,7 @@ if "auth" not in st.session_state:
 
 
 def login_screen():
+    """Halaman login awal dengan PIN."""
     st.markdown(
         """
         <div class="header-banana" style="margin-top: 2rem; margin-bottom: 1.5rem;">
@@ -72,8 +74,80 @@ def login_screen():
             st.error("PIN salah. Coba lagi.")
 
 
+def profile_screen():
+    """Halaman profil UMKM yang muncul setelah login pertama kali."""
+    # Inisialisasi default profil kalau belum ada
+    if "umkm_profile" not in st.session_state:
+        st.session_state.umkm_profile = {
+            "nama_umkm": "Bungo Family",
+            "nama_pemilik": "",
+            "alamat_singkat": "",
+            "kapasitas_bulanan": "",
+        }
+
+    st.markdown(
+        """
+        <div class="header-banana" style="margin-top: 1.5rem; margin-bottom: 1.2rem;">
+          <div class="header-left">
+            <div class="logo-circle small">🍌</div>
+            <div class="title-block">
+              <h1>Profil UMKM</h1>
+              <p>Isi profil singkat usaha sebelum masuk dashboard peramalan.</p>
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        "Informasi ini hanya untuk menyesuaikan tampilan dan saran UMKM. "
+        "Tidak dibagikan ke pihak lain."
+    )
+
+    prof = st.session_state.umkm_profile
+
+    with st.form("profil_umkm_form"):
+        nama_umkm = st.text_input("Nama UMKM", value=prof.get("nama_umkm", ""))
+        nama_pemilik = st.text_input("Nama pemilik", value=prof.get("nama_pemilik", ""))
+        alamat_singkat = st.text_area(
+            "Alamat singkat",
+            value=prof.get("alamat_singkat", ""),
+            height=70,
+        )
+        kapasitas_bulanan = st.text_input(
+            "Perkiraan kapasitas produksi per bulan (mis. 500 sisir)",
+            value=prof.get("kapasitas_bulanan", ""),
+        )
+
+        lanjut = st.form_submit_button("Simpan profil & buka dashboard")
+
+        if lanjut:
+            st.session_state.umkm_profile = {
+                "nama_umkm": nama_umkm.strip() or "UMKM Salai Pisang",
+                "nama_pemilik": nama_pemilik.strip(),
+                "alamat_singkat": alamat_singkat.strip(),
+                "kapasitas_bulanan": kapasitas_bulanan.strip(),
+            }
+            st.session_state.profile_done = True
+            st.experimental_rerun()
+
+
+# -----------------------------
+# Flow login → profil → dashboard
+# -----------------------------
+# Jika belum login → tampilkan halaman login
 if st.session_state.auth is None:
     login_screen()
+    st.stop()
+
+# Cek flag profil
+if "profile_done" not in st.session_state:
+    st.session_state.profile_done = False
+
+# Jika profil belum diisi → tampilkan halaman profil UMKM
+if not st.session_state.profile_done:
+    profile_screen()
     st.stop()
 
 MODE_ADMIN = st.session_state.auth == "admin"
@@ -163,11 +237,13 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def detect_date_column(df: pd.DataFrame):
+    # 1) kolom datetime langsung
     for col in df.columns:
         if pd.api.types.is_datetime64_any_dtype(df[col]):
             if df[col].notna().sum() >= max(3, len(df) * 0.5):
                 return col, df[col]
 
+    # 2) kolom teks dengan kata kunci tanggal
     date_keywords = [
         "tanggal",
         "tgl",
@@ -481,9 +557,9 @@ def build_summary(tidy: pd.DataFrame) -> str:
 
 
 # -----------------------------
-# Saran untuk UMKM
+# Saran untuk UMKM (pakai profil)
 # -----------------------------
-def build_umkm_advice(df_forecast: pd.DataFrame) -> str:
+def build_umkm_advice(df_forecast: pd.DataFrame, profile: dict | None = None) -> str:
     if df_forecast is None or df_forecast.empty:
         return "Belum ada data prediksi untuk dibuatkan saran."
 
@@ -492,21 +568,44 @@ def build_umkm_advice(df_forecast: pd.DataFrame) -> str:
     peak = g.loc[g["nilai"].idxmax()]
     low = g.loc[g["nilai"].idxmin()]
 
+    nama_umkm = None
+    kapasitas = None
+    if profile:
+        nama_umkm = (profile.get("nama_umkm") or "").strip()
+        kapasitas = (profile.get("kapasitas_bulanan") or "").strip()
+
     saran = []
 
+    if nama_umkm:
+        saran.append(
+            f"Untuk {nama_umkm}, pola penjualan menunjukkan perbedaan cukup jelas antar bulan. "
+        )
+
     saran.append(
-        f"Bulan paling ramai: {peak['tanggal'].strftime('%B %Y')}, "
-        f"sekitar {int(peak['nilai'])} sisir."
+        f"Bulan paling ramai penjualan diperkirakan pada {peak['tanggal'].strftime('%B %Y')}, "
+        f"dengan kebutuhan sekitar {int(peak['nilai']):,} sisir."
     )
 
     saran.append(
-        f"Bulan paling sepi: {low['tanggal'].strftime('%B %Y')}, "
-        f"hanya sekitar {int(low['nilai'])} sisir."
+        f"Sebaliknya, bulan dengan penjualan terendah diperkirakan pada {low['tanggal'].strftime('%B %Y')}, "
+        f"dengan kebutuhan sekitar {int(low['nilai']):,} sisir saja."
     )
 
+    if kapasitas:
+        saran.append(
+            f"Jika kapasitas produksi normal sekitar {kapasitas}, "
+            "pemilik usaha dapat mulai menambah stok secara bertahap menjelang bulan ramai "
+            "dan mengurangi pembelian bahan baku pada bulan yang sepi."
+        )
+    else:
+        saran.append(
+            "Pemilik usaha disarankan menambah pembelian pisang menjelang bulan ramai "
+            "dan mengurangi pembelian di bulan sepi agar tidak banyak sisa bahan."
+        )
+
     saran.append(
-        "Pemilik usaha dapat menambah pembelian pisang menjelang bulan ramai "
-        "dan mengurangi pembelian di bulan yang sepi agar tidak ada sisa bahan."
+        "Selain itu, penting untuk memantau kembali data aktual setiap bulan dan membandingkannya "
+        "dengan hasil prediksi agar keputusan pembelian bahan baku tetap terkontrol."
     )
 
     return " ".join(saran)
@@ -534,9 +633,10 @@ def create_main_chart(tidy: pd.DataFrame):
         x=alt.X("tanggal:T", title="Tanggal"),
     )
 
-    color_actual = "#1976D2"
-    color_forecast = "#F9A825"
-    color_ramadhan = "#FFB300"
+    # Warna lebih lembut (pastel)
+    color_actual = "#1E5AA8"
+    color_forecast = "#FCE97B"
+    color_ramadhan = "#F9C663"
 
     band = (
         base.transform_filter(alt.datum.jenis == "Prediksi")
@@ -653,6 +753,7 @@ with st.sidebar:
 
     if st.button("Keluar"):
         st.session_state.auth = None
+        st.session_state.profile_done = False
         st.rerun()
 
     st.markdown("### Pengaturan Tampilan")
@@ -682,8 +783,11 @@ with st.sidebar:
 
 
 # -----------------------------
-# Header: Logo + Judul
+# Header dashboard utama
 # -----------------------------
+umkm_profile = st.session_state.umkm_profile
+nama_umkm_disp = umkm_profile.get("nama_umkm") or "UMKM Salai Pisang"
+
 if MODE_ADMIN:
     header_right_html = """
       <div class="header-right">
@@ -702,10 +806,10 @@ st.markdown(
     f"""
     <div class="header-banana">
       <div class="header-left">
-        <div class="logo-circle">🍌</div>
+        <div class="logo-circle small">🍌</div>
         <div class="title-block">
-          <h1>Dashboard Penjualan Pisang UMKM</h1>
-          <p>Alat bantu sederhana untuk melihat penjualan dan prediksi 12 bulan ke depan.</p>
+          <h1>Dashboard Forecast Stok Salai Pisang</h1>
+          <p>{nama_umkm_disp} · Perencanaan stok berbasis model SARIMA.</p>
         </div>
       </div>
       {header_right_html}
@@ -714,15 +818,14 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown("---")
-
+# Profil ringkas di bawah header
 st.markdown(
-    """
+    f"""
     <div class="analysis-box" style="margin-top:0.3rem; margin-bottom:1rem;">
       <b>Profil usaha</b><br/>
-      Nama usaha: UMKM Pisang Sejahtera<br/>
-      Lokasi: (sesuaikan dengan data asli)<br/>
-      Jenis produk: Olahan pisang
+      Nama usaha: {umkm_profile.get("nama_umkm") or "-"}<br/>
+      Pemilik: {umkm_profile.get("nama_pemilik") or "-"}<br/>
+      Kapasitas produksi per bulan: {umkm_profile.get("kapasitas_bulanan") or "-"}
     </div>
     """,
     unsafe_allow_html=True,
@@ -782,10 +885,13 @@ summary_text = build_summary(tidy)
 col1, col2, col3 = st.columns(3)
 
 with col1:
+    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
     total_pred = df_forecast["tanggal"].nunique()
     st.metric("Periode prediksi", f"{total_pred} bulan")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with col2:
+    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
     if not df_forecast.empty:
         peak = df_forecast.loc[df_forecast["nilai"].idxmax()]
         st.metric(
@@ -795,13 +901,16 @@ with col2:
         )
     else:
         st.metric("Bulan tertinggi", "–")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with col3:
+    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
     if not df_forecast.empty:
         first_f = df_forecast.sort_values("tanggal")["nilai"].iloc[0]
         st.metric("Penjualan bulan pertama", f"{int(first_f)} unit")
     else:
         st.metric("Penjualan bulan pertama", "–")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
 # Info grafik
@@ -831,7 +940,7 @@ with left_col:
 
 with right_col:
     st.subheader("Saran untuk UMKM")
-    umkm_text = build_umkm_advice(df_forecast)
+    umkm_text = build_umkm_advice(df_forecast, umkm_profile)
     st.markdown(
         f"<div class='analysis-box'>{umkm_text}</div>",
         unsafe_allow_html=True,
@@ -858,6 +967,18 @@ with right_col:
         data=txt_buffer,
         file_name="ringkasan_penjualan_pisang.txt",
         mime="text/plain",
+    )
+
+# -----------------------------
+# Grafik year-to-year
+# -----------------------------
+st.markdown("### Perbandingan penjualan tahun ke tahun")
+yoy_chart = create_yoy_chart(df_actual)
+if yoy_chart is not None:
+    st.altair_chart(yoy_chart, use_container_width=True)
+else:
+    st.caption(
+        "Grafik year-to-year akan tampil jika data aktual mencakup lebih dari satu tahun."
     )
 
 # -----------------------------
