@@ -1,205 +1,344 @@
 /* ================================
-   WARNA UTAMA
+   PALET WARNA BARU (PASTEL)
    ================================ */
 
 :root {
-    --banana-yellow: #F9A825;
-    --banana-light: #FFF8D6;
-    --banana-shadow: rgba(249, 168, 37, 0.25);
-    --dark-blue: #203258;
-    --soft-grey: #F4F4F4;
-    --text-dark: #1A1A1A;
+    --accent-yellow: #FFEFA6;      /* Kuning pastel lembut */
+    --accent-yellow-strong: #FCE97B;
+    --accent-border: #F5D85E;
+    --navy: #203258;               /* Biru navy keabu */
+    --soft-grey-bg: #F7F7FA;       /* Background lembut */
+    --card-border: #E3E6EE;
+    --text-main: #203258;
+    --text-muted: #4F5B74;
+    --danger: #D32F2F;
 }
 
 /* ================================
    BODY & UMUM
    ================================ */
 
-html, body, .stApp {
-    background-color: #FAFAFA !important;
-    color: var(--text-dark);
-    font-family: "Inter", sans-serif !important;
+html, body {
+    background-color: var(--soft-grey-bg);
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--text-main);
 }
 
-/* Hilangkan jarak berlebihan */
-.block-container {
-    padding-top: 1rem !important;
+.stApp {
+    background: linear-gradient(180deg, #F7F7FA 0%, #FFFFFF 45%);
+}
+
+/* Ruang di kiri-kanan biar tidak mepet */
+main .block-container {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    max-width: 1150px;
 }
 
 /* ================================
-   HEADER
+   TYPOGRAPHY
    ================================ */
 
-.header-banana {
-    background: var(--banana-light);
-    border-radius: 14px;
-    padding: 1rem 1.6rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    box-shadow: 0px 3px 10px var(--banana-shadow);
+h1, h2, h3, h4 {
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: 0.01em;
 }
 
-.logo-circle {
-    width: 58px;
-    height: 58px;
-    border-radius: 50%;
-    background: var(--banana-yellow);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    box-shadow: 0px 3px 10px rgba(0,0,0,0.15);
+h1 {
+    font-size: 1.9rem;
+    margin-bottom: 0.4rem;
 }
 
-.title-block h1 {
-    margin: 0;
-    font-size: 1.8rem;
-    color: var(--dark-blue);
+h2 {
+    font-size: 1.35rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.6rem;
 }
 
-.title-block p {
-    margin: 0;
-    margin-top: 4px;
+h3 {
+    font-size: 1.1rem;
+    margin-top: 1rem;
+    margin-bottom: 0.4rem;
+}
+
+p, label, span, li {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-main);
+}
+
+.small-text {
     font-size: 0.9rem;
-    color: #555;
-}
-
-/* Pill kanan */
-.tag-pill {
-    background: var(--banana-yellow);
-    padding: 0.45rem 1rem;
-    border-radius: 24px;
-    color: white;
-    font-weight: 600;
-    box-shadow: 0px 3px 8px var(--banana-shadow);
-    margin-left: 0.4rem;
-}
-
-.tag-pill.secondary {
-    background: #FFD966;
-    color: #333;
+    color: var(--text-muted);
 }
 
 /* ================================
    SIDEBAR
    ================================ */
 
-.css-1d391kg, .css-1cpxqw2 {
-    background-color: white !important;
-    border-right: 1px solid #EEE !important;
+[data-testid="stSidebar"] {
+    background-color: #FFFFFF;
+    border-right: 1px solid var(--card-border);
 }
 
-.sidebar .sidebar-content {
-    padding: 1.2rem !important;
+[data-testid="stSidebar"] > div {
+    padding-top: 1.5rem;
 }
 
-.stButton > button {
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    font-size: 1.05rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Tombol di sidebar */
+[data-testid="stSidebar"] .stButton > button {
     width: 100%;
 }
 
 /* ================================
-   TOMBOL UTAMA STREAMLIT
+   BUTTONS
    ================================ */
 
-.stButton>button {
-    background: var(--banana-yellow) !important;
-    color: white !important;
-    padding: 0.6rem 1.2rem !important;
+.stButton > button {
+    background: var(--accent-yellow);
+    border-radius: 999px;
+    border: 1px solid var(--accent-border);
+    color: var(--navy);
     font-weight: 600;
-    border-radius: 10px !important;
-    border: none !important;
-    box-shadow: 0px 3px 8px var(--banana-shadow);
-    transition: 0.2s;
-}
-
-.stButton>button:hover {
-    background: #e0a320 !important;
-    box-shadow: 0px 4px 10px var(--banana-shadow);
-}
-
-/* ================================
-   DOWNLOAD BUTTON
-   ================================ */
-
-.stDownloadButton > button {
-    background: var(--banana-yellow) !important;
-    border-radius: 24px !important;
-    padding: 0.7rem 1.3rem !important;
-    color: white !important;
-    border: none !important;
-    font-weight: 600 !important;
-    box-shadow: 0px 3px 8px var(--banana-shadow);
-}
-
-.stDownloadButton > button:hover {
-    background: #e0a320 !important;
-}
-
-/* ================================
-   ANALYSIS BOX
-   ================================ */
-
-.analysis-box {
-    background: var(--soft-grey);
-    padding: 1rem 1.3rem;
-    border-radius: 14px;
-    border-left: 6px solid var(--banana-yellow);
+    padding: 0.45rem 1.4rem;
     font-size: 0.95rem;
-    box-shadow: 0px 3px 10px rgba(0,0,0,0.06);
+    transition: all 0.15s ease-in-out;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+}
+
+.stButton > button:hover {
+    background: var(--accent-yellow-strong);
+    border-color: var(--accent-border);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.07);
+}
+
+.stButton > button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Tambahan kelas tombol sekunder (kalau dipakai di st.markdown HTML) */
+.btn-secondary {
+    background: var(--navy) !important;
+    color: #FFFFFF !important;
+    border-radius: 999px !important;
+    border: 1px solid #1A2945 !important;
+    padding: 0.45rem 1.2rem !important;
+    font-size: 0.9rem !important;
 }
 
 /* ================================
-   FILE UPLOADER
+   INPUTS & SELECTS
    ================================ */
 
-[data-testid="stFileUploader"] {
-    border: 2px dashed var(--banana-yellow) !important;
-    border-radius: 14px !important;
-    background: var(--banana-light) !important;
-    padding: 1.2rem !important;
+.stTextInput > div > div > input,
+.stNumberInput input,
+.stDateInput input,
+.stSelectbox > div > div > div {
+    border-radius: 12px;
+    border: 1px solid #DADFEA;
+    background-color: #FFFFFF;
+    font-size: 0.95rem;
+    padding: 0.4rem 0.6rem;
 }
 
-[data-testid="stFileUploader"] section {
-    text-align: center !important;
+.stTextInput > div > div > input:focus,
+.stNumberInput input:focus,
+.stDateInput input:focus {
+    border-color: var(--accent-border);
+    box-shadow: 0 0 0 1px rgba(245, 216, 94, 0.5);
+    outline: none;
+}
+
+/* Label input */
+.stTextInput label, .stNumberInput label, .stDateInput label, .stSelectbox label {
+    font-weight: 500;
+    font-size: 0.9rem;
 }
 
 /* ================================
-   EXPANDER
+   HEADER DASHBOARD & LOGIN
    ================================ */
 
-details {
-    background: var(--banana-light) !important;
-    border-radius: 10px !important;
-    padding: 0.4rem !important;
-    margin-bottom: 0.6rem !important;
+.header-banana {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FFFFFF;
+    padding: 1rem 1.4rem;
+    border-radius: 18px;
+    border: 1px solid var(--card-border);
+    box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.03);
+    margin-bottom: 1.6rem;
+    gap: 1rem;
 }
 
-summary {
-    font-weight: 600 !important;
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
 }
 
-/* ================================
-   TABEL STREAMLIT
-   ================================ */
-
-[data-testid="stDataFrame"] {
-    border-radius: 12px !important;
-    box-shadow: 0px 3px 10px rgba(0,0,0,0.05);
-    overflow: hidden !important;
+.logo-circle {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: var(--accent-yellow);
+    color: #203258;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* ================================
-   LOGIN BOX (KHUSUS HALAMAN LOGIN)
-   ================================ */
+.logo-circle.small {
+    width: 42px;
+    height: 42px;
+    font-size: 22px;
+}
 
+.title-block h1 {
+    font-size: 1.4rem;
+    margin: 0;
+}
+
+.title-block p {
+    margin: 0.2rem 0 0 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.tag-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    background: #EFF3FF;
+    color: var(--navy);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.tag-pill.secondary {
+    background: #FFF8D6;
+}
+
+/* Login box */
 .login-box {
     max-width: 480px;
     background: white;
-    padding: 2rem;
-    margin: auto;
+    padding: 2rem 2.2rem;
+    margin: 2rem auto;
+    border-radius: 18px;
+    box-shadow: 0px 4px 16px rgba(0,0,0,0.06);
+}
+
+/* ================================
+   CARDS / PANEL KONTEN
+   ================================ */
+
+.card {
+    background-color: #FFFFFF;
+    border-radius: 18px;
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--card-border);
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.02);
+}
+
+/* Metric card (untuk baris st.columns metric) */
+.metric-card {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--card-border);
+    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.02);
+}
+
+/* Saran & analisis */
+.analysis-box {
+    background: #FFFDF5;
     border-radius: 14px;
-    box-shadow: 0px 4px 14px rgba(0,0,0,0.1);
+    border: 1px dashed #F1E4A3;
+    padding: 0.9rem 1rem;
+    font-size: 0.93rem;
+}
+
+/* Wrapper grafik */
+.chart-card {
+    background-color: #FFFFFF;
+    border-radius: 18px;
+    padding: 1rem 1.1rem 1.2rem 1.1rem;
+    margin-bottom: 1.2rem;
+    border: 1px solid var(--card-border);
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.02);
+}
+
+/* ================================
+   FILE UPLOADER (ADMIN)
+   ================================ */
+
+.file-uploader-box {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--card-border);
+}
+
+/* ================================
+   TABEL & EXPANDER
+   ================================ */
+
+[data-testid="stExpander"] {
+    border-radius: 14px;
+    border: 1px solid var(--card-border);
+    background: #FFFFFF;
+}
+
+/* ================================
+   NOTIF / ALERT
+   ================================ */
+
+.stAlert {
+    border-radius: 14px;
+}
+
+/* ================================
+   RESPONSIVE
+   ================================ */
+
+@media (max-width: 768px) {
+    main .block-container {
+        padding-left: 0.8rem;
+        padding-right: 0.8rem;
+    }
+
+    .header-banana {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header-right {
+        width: 100%;
+        justify-content: flex-start;
+    }
 }
