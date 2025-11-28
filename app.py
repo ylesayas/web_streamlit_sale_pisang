@@ -893,7 +893,7 @@ st.info(
     """
 **Keterangan grafik:**
 
-• Garis kuning = prediksi penjualan 12 bulan  
+• Garis kuning = prediksi penjualan 24 bulan  
 • Area kuning = batas bawah dan batas atas prediksi  
 • Titik berbentuk berlian = bulan sekitar Ramadan (perkiraan)  
 """
@@ -905,7 +905,7 @@ st.info(
 left_col, right_col = st.columns([2, 1])
 
 with left_col:
-    st.subheader("Tren penjualan dan prediksi 12 bulan")
+    st.subheader("Tren penjualan dan prediksi 24 bulan")
     main_chart = create_main_chart(tidy)
     if main_chart is not None:
         st.altair_chart(main_chart, use_container_width=True)
@@ -974,3 +974,4 @@ with st.expander("Lihat data prediksi (tabel)"):
         ),
         use_container_width=True,
     )
+
