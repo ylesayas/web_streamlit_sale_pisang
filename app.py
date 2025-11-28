@@ -15,6 +15,7 @@ st.set_page_config(
     layout="wide",
 )
 
+
 # -----------------------------------
 # Load CSS eksternal
 # -----------------------------------
@@ -31,6 +32,7 @@ def load_local_css(file_name: str = "theme.css") -> None:
 
 load_local_css()
 
+
 # -----------------------------------
 # Sistem PIN
 # -----------------------------------
@@ -40,18 +42,19 @@ PIN_ADMIN = "0708"
 if "auth" not in st.session_state:
     st.session_state.auth = None  # None / "umkm" / "admin"
 
+
 # -----------------------------------
 # Halaman login
 # -----------------------------------
 def login_screen():
     st.markdown(
         """
-        <div class="header-banana card">
-          <div class="header-left">
-            <div class="logo-circle small">🍌</div>
-            <div class="title-block">
+        <div class="login-wrapper">
+          <div class="login-card">
+            <div class="login-icon">🍌</div>
+            <div class="login-text">
               <h1>Halaman Masuk Dashboard</h1>
-              <p>Masukkan kode akses untuk melihat laporan penjualan dan prediksi.</p>
+              <p>Masukkan kode akses yang diberikan untuk melihat laporan penjualan pisang.</p>
             </div>
           </div>
         </div>
@@ -59,7 +62,9 @@ def login_screen():
         unsafe_allow_html=True,
     )
 
-    st.write("Kode akses hanya untuk pemilik usaha dan peneliti yang berwenang.")
+    st.write(
+        "Kode akses ini hanya untuk pemilik usaha dan peneliti yang berwenang."
+    )
 
     pin = st.text_input("Kode PIN", type="password")
 
@@ -116,11 +121,13 @@ def profile_screen():
             height=70,
         )
 
+        st.markdown('<div class="profile-actions">', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1:
             btn_simpan = st.form_submit_button("Simpan profil & buka dashboard")
         with col2:
             btn_skip = st.form_submit_button("Lewati & buka dashboard")
+        st.markdown("</div>", unsafe_allow_html=True)
 
         if btn_simpan or btn_skip:
             st.session_state.umkm_profile = {
@@ -148,6 +155,7 @@ if not st.session_state.profile_done:
 
 MODE_ADMIN = st.session_state.auth == "admin"
 MODE_UMKM = st.session_state.auth == "umkm"
+
 
 # -----------------------------------
 # Helper: nama bulan Indonesia
@@ -752,6 +760,7 @@ with st.sidebar:
         "di dalam sistem. Pengguna tidak perlu upload file apa pun."
     )
 
+
 # -----------------------------------
 # Header dashboard utama
 # -----------------------------------
@@ -807,6 +816,7 @@ with col_btn:
         st.session_state.profile_done = False
         st.rerun()
 
+
 # -----------------------------------
 # Mode admin: kelola data Excel
 # -----------------------------------
@@ -831,6 +841,7 @@ if MODE_ADMIN:
         except Exception as e:
             st.error(f"Gagal membaca file: {e}")
 
+
 # -----------------------------------
 # Load data dari file di repo
 # -----------------------------------
@@ -850,6 +861,7 @@ except Exception as e:
         f"Detail: {e}"
     )
     st.stop()
+
 
 # -----------------------------------
 # Ringkasan angka utama
@@ -886,6 +898,7 @@ with col3:
         st.metric("Penjualan bulan pertama", "–")
     st.markdown("</div>", unsafe_allow_html=True)
 
+
 # -----------------------------------
 # Info grafik
 # -----------------------------------
@@ -898,6 +911,7 @@ st.info(
 • Titik berbentuk berlian = bulan sekitar Ramadan (perkiraan)  
 """
 )
+
 
 # -----------------------------------
 # Layout utama: grafik & panel kanan
@@ -943,6 +957,7 @@ with right_col:
         mime="text/plain",
     )
 
+
 # -----------------------------------
 # Grafik year-to-year
 # -----------------------------------
@@ -957,6 +972,7 @@ else:
     st.caption(
         "Grafik year-to-year akan tampil jika data aktual mencakup lebih dari satu tahun."
     )
+
 
 # -----------------------------------
 # Tabel data prediksi
@@ -974,4 +990,3 @@ with st.expander("Lihat data prediksi (tabel)"):
         ),
         use_container_width=True,
     )
-
