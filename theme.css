@@ -1,380 +1,260 @@
-/* ================================
-   PALET WARNA BARU (PASTEL)
-   ================================ */
-
 :root {
-    --accent-yellow: #FFEFA6;      /* Kuning pastel lembut */
-    --accent-yellow-strong: #FCE97B;
-    --accent-border: #F5D85E;
-    --navy: #203258;               /* Biru navy keabu */
-    --soft-grey-bg: #F7F7FA;       /* Background lembut */
-    --card-border: #E3E6EE;
-    --text-main: #203258;
-    --text-muted: #4F5B74;
-    --danger: #D32F2F;
+  --bg-main: #F9FAFC;
+  --bg-card: #FFFFFF;
+  --bg-soft-yellow: #FFF8D8;
+  --accent-yellow: #FFEFA6;
+  --accent-yellow-strong: #FCE97B;
+  --accent-navy: #203258;
+  --text-main: #203258;
+  --text-muted: #6B7280;
+  --border-soft: #E5E7EB;
 }
 
-/* ================================
-   BODY & UMUM
-   ================================ */
-
-html, body {
-    background-color: var(--soft-grey-bg);
-    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    color: var(--text-main);
+/* Background & font */
+html, body, .stApp {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.stApp {
-    background: linear-gradient(180deg, #F7F7FA 0%, #FFFFFF 45%);
+/* Hilangkan garis merah fokus default */
+*:focus {
+  outline: none !important;
 }
 
-/* Ruang di kiri-kanan biar tidak mepet */
-main .block-container {
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-    max-width: 1150px;
+/* ====== LOGIN ====== */
+
+.login-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 3rem;
 }
 
-/* ================================
-   TYPOGRAPHY
-   ================================ */
-
-h1, h2, h3, h4 {
-    font-weight: 700;
-    color: var(--navy);
-    letter-spacing: 0.01em;
+.login-card {
+  background: var(--bg-soft-yellow);
+  border-radius: 24px;
+  padding: 2.5rem 3rem;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.06);
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  max-width: 760px;
 }
 
-h1 {
-    font-size: 1.9rem;
-    margin-bottom: 0.4rem;
+.login-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent-yellow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
 }
 
-h2 {
-    font-size: 1.35rem;
-    margin-top: 1.5rem;
-    margin-bottom: 0.6rem;
+.login-text h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.7rem;
+  color: var(--accent-navy);
 }
 
-h3 {
-    font-size: 1.1rem;
-    margin-top: 1rem;
-    margin-bottom: 0.4rem;
+.login-text p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
 }
 
-p, label, span, li {
-    font-size: 0.95rem;
-    line-height: 1.6;
-    color: var(--text-main);
-}
-
-.small-text {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-}
-
-/* ================================
-   SIDEBAR
-   ================================ */
-
-[data-testid="stSidebar"] {
-    background-color: #FFFFFF;
-    border-right: 1px solid var(--card-border);
-}
-
-[data-testid="stSidebar"] > div {
-    padding-top: 1.5rem;
-}
-
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 {
-    font-size: 1.05rem;
-    margin-bottom: 0.75rem;
-}
-
-/* Tombol di sidebar */
-[data-testid="stSidebar"] .stButton > button {
-    width: 100%;
-}
-
-/* ================================
-   BUTTONS
-   ================================ */
-
-.stButton > button {
-    background: var(--accent-yellow);
-    border-radius: 999px;
-    border: 1px solid var(--accent-border);
-    color: var(--navy);
-    font-weight: 600;
-    padding: 0.45rem 1.4rem;
-    font-size: 0.95rem;
-    transition: all 0.15s ease-in-out;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-}
-
-.stButton > button:hover {
-    background: var(--accent-yellow-strong);
-    border-color: var(--accent-border);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.07);
-}
-
-.stButton > button:active {
-    transform: translateY(0);
-    box-shadow: none;
-}
-
-/* Tambahan kelas tombol sekunder (kalau dipakai di st.markdown HTML) */
-.btn-secondary {
-    background: var(--navy) !important;
-    color: #FFFFFF !important;
-    border-radius: 999px !important;
-    border: 1px solid #1A2945 !important;
-    padding: 0.45rem 1.2rem !important;
-    font-size: 0.9rem !important;
-}
-
-/* ================================
-   INPUTS & SELECTS
-   ================================ */
-
-.stTextInput > div > div > input,
-.stNumberInput input,
-.stDateInput input,
-.stSelectbox > div > div > div {
-    border-radius: 12px;
-    border: 1px solid #DADFEA;
-    background-color: #FFFFFF;
-    font-size: 0.95rem;
-    padding: 0.4rem 0.6rem;
-}
-
-.stTextInput > div > div > input:focus,
-.stNumberInput input:focus,
-.stDateInput input:focus {
-    border-color: var(--accent-border);
-    box-shadow: 0 0 0 1px rgba(245, 216, 94, 0.5);
-    outline: none;
-}
-
-/* Label input */
-.stTextInput label, .stNumberInput label, .stDateInput label, .stSelectbox label {
-    font-weight: 500;
-    font-size: 0.9rem;
-}
-
-/* ================================
-   HEADER DASHBOARD & LOGIN
-   ================================ */
+/* ====== HEADER & TITLE ====== */
 
 .header-banana {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #FFFFFF;
-    padding: 1rem 1.4rem;
-    border-radius: 18px;
-    border: 1px solid var(--card-border);
-    box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.03);
-    margin-bottom: 1.6rem;
-    gap: 1rem;
+  background: var(--bg-card);
+  border-radius: 24px;
+  padding: 1.8rem 2.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 14px 35px rgba(0,0,0,0.05);
+  margin-bottom: 1.2rem;
+}
+
+.header-banana.card {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.04);
+  margin-top: 1.5rem;
 }
 
 .header-left {
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .logo-circle {
-    width: 54px;
-    height: 54px;
-    border-radius: 50%;
-    background: var(--accent-yellow);
-    color: #203258;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.08);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent-yellow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
 }
 
 .logo-circle.small {
-    width: 42px;
-    height: 42px;
-    font-size: 22px;
+  width: 48px;
+  height: 48px;
+  font-size: 26px;
 }
 
 .title-block h1 {
-    font-size: 1.4rem;
-    margin: 0;
+  margin: 0;
+  font-size: 1.7rem;
+  color: var(--accent-navy);
 }
 
 .title-block p {
-    margin: 0.2rem 0 0 0;
-    font-size: 0.9rem;
-    color: var(--text-muted);
+  margin: 0.2rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
 }
 
 .header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
+/* Tag pill kanan */
 .tag-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.3rem 0.8rem;
-    border-radius: 999px;
-    background: #EFF3FF;
-    color: var(--navy);
-    font-size: 0.8rem;
-    font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: #E0ECFF;
+  color: #1E3A8A;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .tag-pill.secondary {
-    background: #FFF8D6;
+  background: #F3F4F6;
+  color: #4B5563;
 }
 
-/* Login box */
-.login-box {
-    max-width: 480px;
-    background: white;
-    padding: 2rem 2.2rem;
-    margin: 2rem auto;
-    border-radius: 18px;
-    box-shadow: 0px 4px 16px rgba(0,0,0,0.06);
-}
+/* ====== CARD & BOX ====== */
 
-/* ================================
-   CARDS / PANEL KONTEN
-   ================================ */
-
-.card {
-    background-color: #FFFFFF;
-    border-radius: 18px;
-    padding: 1.1rem 1.2rem;
-    margin-bottom: 1rem;
-    border: 1px solid var(--card-border);
-    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.02);
-}
-
-/* Metric card (untuk baris st.columns metric) */
-.metric-card {
-    background-color: #FFFFFF;
-    border-radius: 16px;
-    padding: 0.8rem 1rem;
-    border: 1px solid var(--card-border);
-    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.02);
-}
-
-/* Saran & analisis */
 .analysis-box {
-    background: #FFFDF5;
-    border-radius: 14px;
-    border: 1px dashed #F1E4A3;
-    padding: 0.9rem 1rem;
-    font-size: 0.93rem;
+  background: #FFFBEB;
+  border-radius: 20px;
+  padding: 1.2rem 1.4rem;
+  border: 1px dashed #FACC15;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #4B5563;
 }
 
-/* Wrapper grafik */
-.chart-card {
-    background-color: #FFFFFF;
-    border-radius: 18px;
-    padding: 1rem 1.1rem 1.2rem 1.1rem;
-    margin-bottom: 1.2rem;
-    border: 1px solid var(--card-border);
-    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.02);
+/* Metric cards */
+.metric-card {
+  background: var(--bg-card);
+  border-radius: 18px;
+  padding: 0.9rem 1.1rem 1.1rem;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.03);
 }
 
-/* ================================
-   FILE UPLOADER (ADMIN)
-   ================================ */
+/* ====== PROFILE FORM BUTTONS ====== */
 
-.file-uploader-box {
-    background: #FFFFFF;
-    border-radius: 16px;
-    padding: 1rem 1.1rem;
-    border: 1px solid var(--card-border);
+.profile-actions {
+  margin-top: 1rem;
 }
 
-/* ================================
-   TABEL & EXPANDER
-   ================================ */
-
-[data-testid="stExpander"] {
-    border-radius: 14px;
-    border: 1px solid var(--card-border);
-    background: #FFFFFF;
+/* Biar tombol full width di kolom */
+.profile-actions .stButton button {
+  width: 100%;
 }
 
-/* ================================
-   NOTIF / ALERT
-   ================================ */
+/* Tombol kedua = "Lewati & buka dashboard" → tampil sebagai secondary */
+.profile-actions .stButton:nth-child(2) button {
+  background-color: #ffffff !important;
+  color: var(--accent-navy) !important;
+  border: 1px solid var(--border-soft) !important;
+  box-shadow: none !important;
+}
+
+.profile-actions .stButton:nth-child(2) button:hover {
+  background-color: #F5F5F5 !important;
+}
+
+/* ====== SIDEBAR ====== */
+
+[data-testid="stSidebar"] {
+  background-color: #FFFFFF;
+  border-right: 1px solid #E5E7EB;
+}
+
+[data-testid="stSidebar"] .block-container {
+  padding-top: 1.5rem;
+}
+
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+  color: var(--accent-navy);
+}
+
+[data-testid="stSidebar"] .stSlider label {
+  font-size: 0.9rem;
+}
+
+/* ====== BUTTON GLOBAL ====== */
+
+.stButton > button {
+  background: #FFC94A;
+  color: #1F2933;
+  border-radius: 999px;
+  border: none;
+  padding: 0.45rem 1.4rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  cursor: pointer;
+}
+
+.stButton > button:hover {
+  background: #FBBF24;
+}
+
+/* ====== TABLE & DATAFRAME ====== */
+
+.dataframe th {
+  background: #F3F4F6;
+  font-weight: 600;
+}
+
+.css-1aumxhk, .e1q9reml3 { /* class lama/baru streamlit df header */
+  border-radius: 14px !important;
+}
+
+/* ====== EXPANDER ====== */
+
+.streamlit-expanderHeader {
+  font-weight: 600;
+  color: var(--accent-navy);
+}
+
+/* ====== INFO BOX ====== */
 
 .stAlert {
-    border-radius: 14px;
+  border-radius: 18px;
 }
 
-/* ================================
-   RESPONSIVE
-   ================================ */
-
-@media (max-width: 768px) {
-    main .block-container {
-        padding-left: 0.8rem;
-        padding-right: 0.8rem;
-    }
-
-    .header-banana {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .header-right {
-        width: 100%;
-        justify-content: flex-start;
-    }
-}
-
-/* ===========================
-   TOMBOL DI FORM PROFIL UMKM
-   =========================== */
-
-/* Gaya umum semua tombol di dalam form profil */
-[data-testid="stForm"] .stButton > button {
-  border-radius: 999px;
-  padding: 0.6rem 1.4rem;
-  font-weight: 600;
-  min-width: 180px;
-}
-
-/* Tombol kiri: "Simpan profil & buka dashboard" (primary) */
-[data-testid="stForm"] .stButton:first-child button {
-  background: #FCE97B;         /* kuning pastel */
-  color: #203258;              /* navy keabu */
-  border: none;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.04);
-}
-
-[data-testid="stForm"] .stButton:first-child button:hover {
-  background: #FBE36A;
-}
-
-/* Tombol kanan: "Lewati & buka dashboard" (secondary, tidak putih pucat) */
-[data-testid="stForm"] .stButton:last-child button {
-  background: #F4F4F6;         /* abu muda lembut, bukan putih */
-  color: #203258;
-  border: 1px solid rgba(32, 50, 88, 0.18);
-  box-shadow: none;
-}
-
-[data-testid="stForm"] .stButton:last-child button:hover {
-  background: #E9E9EE;
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  .header-banana {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .header-right {
+    align-self: flex-start;
+  }
+  .login-card {
+    padding: 1.8rem 1.5rem;
+  }
 }
