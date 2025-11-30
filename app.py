@@ -26,7 +26,6 @@ def load_local_css(file_name: str = "theme.css") -> None:
             css = f.read()
         st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
-        # Kalau CSS tidak ada, app tetap jalan
         pass
 
 
@@ -49,21 +48,17 @@ if "auth" not in st.session_state:
 def login_screen():
     st.markdown(
         """
-        <div class="login-wrapper">
-          <div class="login-card">
-            <div class="login-icon">🍌</div>
-            <div class="login-text">
-              <h1>Halaman Masuk Dashboard</h1>
-              <p>Masukkan kode akses yang diberikan untuk melihat laporan penjualan pisang.</p>
+        <div class="auth-wrapper">
+          <div class="auth-card">
+            <div class="auth-header-row">
+              <div class="logo-circle">🍌</div>
+              <div class="title-block">
+                <h1>Halaman Masuk Dashboard</h1>
+                <p>Masukkan kode akses yang diberikan untuk melihat laporan penjualan pisang.</p>
+              </div>
             </div>
-          </div>
-        </div>
         """,
         unsafe_allow_html=True,
-    )
-
-    st.write(
-        "Kode akses ini hanya untuk pemilik usaha dan peneliti yang berwenang."
     )
 
     pin = st.text_input("Kode PIN", type="password")
@@ -77,6 +72,8 @@ def login_screen():
             st.rerun()
         else:
             st.error("PIN salah. Coba lagi.")
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
 
 # -----------------------------------
@@ -121,13 +118,11 @@ def profile_screen():
             height=70,
         )
 
-        st.markdown('<div class="profile-actions">', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1:
             btn_simpan = st.form_submit_button("Simpan profil & buka dashboard")
         with col2:
             btn_skip = st.form_submit_button("Lewati & buka dashboard")
-        st.markdown("</div>", unsafe_allow_html=True)
 
         if btn_simpan or btn_skip:
             st.session_state.umkm_profile = {
@@ -166,27 +161,43 @@ ID_MONTHS = {
     "jan.": 1,
     "februari": 2,
     "feb": 2,
+    "feb.": 2,
     "maret": 3,
     "mar": 3,
+    "mar.": 3,
     "april": 4,
     "apr": 4,
+    "apr.": 4,
     "mei": 5,
     "juni": 6,
     "jun": 6,
+    "jun.": 6,
     "juli": 7,
     "jul": 7,
+    "jul.": 7,
     "agustus": 8,
     "agu": 8,
+    "agu.": 8,
     "aug": 8,
+    "aug.": 8,
     "september": 9,
+    "sept": 9,
+    "sept.": 9,
     "sep": 9,
+    "sep.": 9,
     "oktober": 10,
     "okt": 10,
+    "okt.": 10,
+    "oct": 10,
+    "oct.": 10,
     "november": 11,
     "nov": 11,
+    "nov.": 11,
     "desember": 12,
     "des": 12,
+    "des.": 12,
     "dec": 12,
+    "dec.": 12,
 }
 
 ID_MONTH_NAMES = {
@@ -210,7 +221,7 @@ def month_name_id(month_num: int) -> str:
 
 
 # -----------------------------------
-# UNIVERSAL EXCEL PARSER  (tetap utuh)
+# UNIVERSAL EXCEL PARSER  (JANGAN DIHAPUS)
 # -----------------------------------
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -612,7 +623,6 @@ def create_main_chart(tidy: pd.DataFrame):
         x=alt.X("tanggal:T", title="Tanggal"),
     )
 
-    # Warna pastel
     color_actual = "#1E5AA8"
     color_forecast = "#FCE97B"
     color_ramadhan = "#F9C663"
@@ -669,9 +679,36 @@ def create_main_chart(tidy: pd.DataFrame):
         )
     )
 
-    chart = alt.layer(band, line_actual, line_pred, ramadhan_points).resolve_scale(
-        y="shared"
-    )
+    layers = [band, line_actual, line_pred, ramadhan_points]
+
+    # Highlight titik puncak prediksi
+    df_pred = df[df["jenis"] == "Prediksi"]
+    if not df_pred.empty:
+        peak_df = df_pred.sort_values("nilai").tail(1)
+        peak_point = (
+            alt.Chart(peak_df)
+            .mark_point(size=150, color="#E67E22")
+            .encode(
+                x="tanggal:T",
+                y="nilai:Q",
+                tooltip=[
+                    alt.Tooltip("tanggal:T", title="Bulan"),
+                    alt.Tooltip("nilai:Q", title="Prediksi", format=",.0f"),
+                ],
+            )
+        )
+        peak_label = (
+            alt.Chart(peak_df)
+            .mark_text(dy=-15, color="#E67E22", fontWeight="bold")
+            .encode(
+                x="tanggal:T",
+                y="nilai:Q",
+                text=alt.value("Puncak"),
+            )
+        )
+        layers.extend([peak_point, peak_label])
+
+    chart = alt.layer(*layers).resolve_scale(y="shared")
 
     return chart.properties(height=420)
 
@@ -719,6 +756,25 @@ def create_yoy_chart(df_actual: pd.DataFrame):
     )
 
     return chart
+
+
+# -----------------------------------
+# Ringkasan bulan tertinggi & terendah
+# -----------------------------------
+def get_top_bottom_months(df_forecast, top_n=3):
+    """Mengambil n bulan prediksi tertinggi dan terendah."""
+    if df_forecast is None or df_forecast.empty:
+        return None, None
+
+    df = df_forecast.copy().sort_values("nilai", ascending=False)
+
+    top_months = df.head(top_n).copy()
+    bot_months = df.tail(top_n).copy().sort_values("nilai")
+
+    top_months["bulan"] = top_months["tanggal"].dt.strftime("%B %Y")
+    bot_months["bulan"] = bot_months["tanggal"].dt.strftime("%B %Y")
+
+    return top_months, bot_months
 
 
 # -----------------------------------
@@ -893,9 +949,9 @@ with col3:
     st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
     if not df_forecast.empty:
         first_f = df_forecast.sort_values("tanggal")["nilai"].iloc[0]
-        st.metric("Penjualan bulan pertama", f"{int(first_f)} unit")
+        st.metric("Penjualan bulan pertama prediksi", f"{int(first_f)} unit")
     else:
-        st.metric("Penjualan bulan pertama", "–")
+        st.metric("Penjualan bulan pertama prediksi", "–")
     st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -925,6 +981,31 @@ with left_col:
         st.altair_chart(main_chart, use_container_width=True)
     else:
         st.warning("Belum ada data untuk ditampilkan di grafik.")
+
+    # Ringkasan bulan paling ramai & sepi
+    st.markdown("### Ringkasan bulan paling ramai dan sepi")
+    top_months, bot_months = get_top_bottom_months(df_forecast)
+
+    if top_months is not None:
+        colA, colB = st.columns(2)
+        with colA:
+            st.markdown("**3 Bulan prediksi tertinggi**")
+            st.dataframe(
+                top_months[["bulan", "nilai"]].rename(
+                    columns={"bulan": "Bulan", "nilai": "Prediksi"}
+                ),
+                use_container_width=True,
+            )
+        with colB:
+            st.markdown("**3 Bulan prediksi terendah**")
+            st.dataframe(
+                bot_months[["bulan", "nilai"]].rename(
+                    columns={"bulan": "Bulan", "nilai": "Prediksi"}
+                ),
+                use_container_width=True,
+            )
+    else:
+        st.caption("Ringkasan bulan ramai/sepi akan muncul jika data prediksi tersedia.")
 
 with right_col:
     st.subheader("Saran untuk UMKM")
