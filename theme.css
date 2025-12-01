@@ -56,3 +56,31 @@
 .stApp {
   background: #f7f7fb;
 }
+/* --- Poin penting di panel kanan --- */
+.analysis-box.highlight {
+  border-left: 4px solid #f9c663;
+  background: #fffaf0;
+}
+
+.key-points {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.key-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.bullet-icon {
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.key-number {
+  font-weight: 600;
+  color: #1e5aa8;  /* biru biar angka penting ke-highlight */
+}
