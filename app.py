@@ -43,64 +43,32 @@ if "auth" not in st.session_state:
 # -----------------------------------
 # Halaman login (kartu putih melayang)
 # -----------------------------------
-# -----------------------------------
-# Halaman login (kartu putih melayang)
-# -----------------------------------
 def login_screen():
-    # Bikin 3 kolom, pakai kolom tengah biar kartunya benar-benar di tengah
-    c1, c2, c3 = st.columns([1, 2, 1])
-
-    with c2:
-        # Buka div card
-        st.markdown(
-            """
-            <div class="login-card">
-              <div class="header-banana card">
-                <div class="header-left">
-                  <div class="logo-circle big">🍌</div>
-                  <div class="title-block">
-                    <h1>Halaman Masuk Dashboard</h1>
-                    <p>Masukkan kode akses yang diberikan untuk melihat laporan penjualan pisang.</p>
-                  </div>
-                </div>
+    st.markdown(
+        """
+        <div class="login-wrapper">
+          <div class="header-banana card login-card">
+            <div class="header-left">
+              <div class="logo-circle big">🍌</div>
+              <div class="title-block">
+                <h1>Halaman Masuk Dashboard</h1>
+                <p>Masukkan kode akses untuk melihat laporan penjualan pisang.</p>
               </div>
-              <p class="login-caption">
-                Kode akses ini hanya untuk pemilik usaha dan peneliti yang berwenang.
-              </p>
-            """,
-            unsafe_allow_html=True,
-        )
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-        # ➜ Input PIN + tombol SEKARANG di dalam card yang sama
-        pin = st.text_input(
-            "Kode PIN",
-            type="password",
-            placeholder="Masukkan kode PIN di sini...",
-        )
-
-        if st.button("Masuk", use_container_width=True):
-            if pin == PIN_UMKM:
-                st.session_state.auth = "umkm"
-                st.rerun()
-            elif pin == PIN_ADMIN:
-                st.session_state.auth = "admin"
-                st.rerun()
-            else:
-                st.error("PIN salah. Coba lagi.")
-
-        # Tutup div card
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
-    st.write("Kode akses ini hanya untuk pemilik usaha dan peneliti yang berwenang.")
-
-    # kolom tengah buat input PIN biar tidak kepanjangan ke samping
+    # Input PIN di tengah, tidak terlalu lebar
     c1, c2, c3 = st.columns([2, 3, 2])
     with c2:
         pin = st.text_input(
             "Kode PIN",
             type="password",
             placeholder="Masukkan kode PIN di sini...",
+            key="login_pin",               # <-- biar nggak DuplicateElementId
         )
         if st.button("Masuk", use_container_width=True):
             if pin == PIN_UMKM:
@@ -341,9 +309,7 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
         "volume",
         "unit",
     ]
-    actual_cols = [
-        c for c in numeric_cols if any(k in c for k in actual_keywords)
-    ]
+    actual_cols = [c for c in numeric_cols if any(k in c for k in actual_keywords)]
 
     records = []
 
@@ -455,11 +421,7 @@ def build_summary(tidy: pd.DataFrame) -> str:
 
         if len(g) >= 13:
             recent = g.iloc[-12:].mean()
-            prev = (
-                g.iloc[-24:-12].mean()
-                if len(g) >= 24
-                else g.iloc[:-12].mean()
-            )
+            prev = g.iloc[-24:-12].mean() if len(g) >= 24 else g.iloc[:-12].mean()
             if prev and not pd.isna(prev) and prev != 0:
                 growth = (recent - prev) / prev * 100
                 trend_phrase = "meningkat" if growth > 0 else "menurun"
@@ -521,72 +483,6 @@ def build_summary(tidy: pd.DataFrame) -> str:
         )
 
     return " ".join(lines)
-# -----------------------------------
-# Poin penting ringkas (untuk highlight)
-# -----------------------------------
-def build_key_points(df_actual: pd.DataFrame, df_forecast: pd.DataFrame):
-    points = []
-
-    # Fokus ke prediksi dulu (yang paling berguna buat UMKM)
-    if df_forecast is not None and not df_forecast.empty:
-        g = df_forecast.sort_values("tanggal")
-
-        # Puncak & lembah prediksi
-        peak = g.loc[g["nilai"].idxmax()]
-        low = g.loc[g["nilai"].idxmin()]
-
-        points.append(
-            (
-                "📈",
-                f"Bulan prediksi tertinggi: "
-                f"<span class='key-number'>{peak['tanggal'].strftime('%B %Y')}</span> "
-                f"dengan perkiraan "
-                f"<span class='key-number'>{int(peak['nilai']):,} unit</span>."
-            )
-        )
-
-        points.append(
-            (
-                "📉",
-                f"Bulan prediksi terendah: "
-                f"<span class='key-number'>{low['tanggal'].strftime('%B %Y')}</span> "
-                f"dengan perkiraan "
-                f"<span class='key-number'>{int(low['nilai']):,} unit</span>."
-            )
-        )
-
-        # Arah tren prediksi secara umum
-        gp = g.groupby("tanggal")["nilai"].mean().sort_index()
-        if len(gp) >= 2:
-            first_val = gp.iloc[0]
-            last_val = gp.iloc[-1]
-            if first_val and first_val != 0:
-                growth = (last_val - first_val) / first_val * 100
-                arah = "naik" if growth > 0 else "turun"
-                points.append(
-                    (
-                        "🔍",
-                        f"Secara garis besar, tren prediksi "
-                        f"<span class='key-number'>{arah} {abs(growth):.1f}%</span> "
-                        f"dari awal sampai akhir periode."
-                    )
-                )
-
-    # Kalau mau, tambahkan 1 poin dari data aktual
-    if df_actual is not None and not df_actual.empty:
-        ga = df_actual.groupby("tanggal")["nilai"].mean().sort_index()
-        idxmax_a = ga.idxmax()
-        vmax_a = ga.max()
-        points.append(
-            (
-                "📌",
-                f"Bulan aktual tertinggi: "
-                f"<span class='key-number'>{month_name_id(idxmax_a.month)} {idxmax_a.year}</span> "
-                f"dengan sekitar <span class='key-number'>{vmax_a:,.0f} unit</span>."
-            )
-        )
-
-    return points
 
 
 # -----------------------------------
@@ -657,22 +553,21 @@ def create_main_chart(tidy: pd.DataFrame):
 
     df = add_ramadhan_flag(tidy).copy()
 
-    # cari titik puncak prediksi
+    # --- cari titik puncak prediksi ---
     df["is_peak"] = False
     df_pred = df[df["jenis"] == "Prediksi"]
     if not df_pred.empty:
         idx_peak = df_pred["nilai"].idxmax()
         peak_date = df_pred.loc[idx_peak, "tanggal"]
         df.loc[
-            (df["tanggal"] == peak_date) & (df["jenis"] == "Prediksi"),
-            "is_peak",
+            (df["tanggal"] == peak_date) & (df["jenis"] == "Prediksi"), "is_peak"
         ] = True
 
     base = alt.Chart(df).encode(
         x=alt.X("tanggal:T", title="Tanggal"),
     )
 
-    # Warna pastel
+    # Warna
     color_actual = "#1E5AA8"
     color_forecast = "#FCE97B"
     color_ramadhan = "#F9C663"
@@ -716,7 +611,6 @@ def create_main_chart(tidy: pd.DataFrame):
         )
     )
 
-    # titik ramadhan
     ramadhan_points = (
         base.transform_filter(alt.datum.is_ramadhan == True)
         .mark_point(size=90, shape="diamond")
@@ -731,7 +625,6 @@ def create_main_chart(tidy: pd.DataFrame):
         )
     )
 
-    # titik puncak
     peak_point = (
         base.transform_filter(alt.datum.is_peak == True)
         .mark_point(size=140, shape="circle")
@@ -822,41 +715,7 @@ def get_top_bottom_months(df_forecast: pd.DataFrame, top_n: int = 3):
 
 
 # -----------------------------------
-# Load data dari file di repo
-# -----------------------------------
-@st.cache_data(show_spinner=True)
-def load_data():
-    excel_path = Path(__file__).parent / "hasil_prediksi_sarima.xlsx"
-    tidy, df_actual, df_forecast = parse_sales_excel(excel_path)
-    return tidy, df_actual, df_forecast
-
-
-try:
-    tidy, df_actual, df_forecast = load_data()
-except Exception as e:
-    st.error(
-        "Terjadi masalah saat membaca file Excel bawaan. "
-        "Silakan periksa struktur file di repo.\n\n"
-        f"Detail: {e}"
-    )
-    st.stop()
-
-# -----------------------------------
-# Hitung ringkasan
-# -----------------------------------
-summary_text = build_summary(tidy)
-top3, bottom3 = get_top_bottom_months(df_forecast)
-
-# untuk sidebar: bulan tertinggi & terendah
-peak_row = None
-low_row = None
-if not df_forecast.empty:
-    sorted_fc = df_forecast.sort_values("tanggal")
-    peak_row = sorted_fc.loc[sorted_fc["nilai"].idxmax()]
-    low_row = sorted_fc.loc[sorted_fc["nilai"].idxmin()]
-
-# -----------------------------------
-# Sidebar: pengaturan tampilan
+# Sidebar: pengaturan tampilan (bagian 1)
 # -----------------------------------
 with st.sidebar:
     if MODE_ADMIN:
@@ -877,43 +736,37 @@ with st.sidebar:
         step=1,
     )
 
-    st.markdown(
-        f"""
-        <style>
-        html, body, .stApp {{
-            font-size: {font_size}px;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("### Ringkasan Singkat")
-    if peak_row is not None and low_row is not None:
-        st.caption(
-            f"📈 Puncak prediksi: "
-            f"{peak_row['tanggal'].strftime('%B %Y')} "
-            f"({peak_row['nilai']:.0f} unit)"
-        )
-        st.caption(
-            f"📉 Prediksi terendah: "
-            f"{low_row['tanggal'].strftime('%B %Y')} "
-            f"({low_row['nilai']:.0f} unit)"
-        )
-    else:
-        st.caption("Belum ada data prediksi yang bisa diringkas.")
-
-    st.markdown("### Sumber Data")
-    st.caption(
-        "Data penjualan dan prediksi otomatis diambil dari file Excel "
-        "di dalam sistem. Pengguna tidak perlu upload file apa pun."
-    )
+# Terapkan ukuran font global
+st.markdown(
+    f"""
+    <style>
+    html, body, .stApp {{
+        font-size: {font_size}px;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # -----------------------------------
 # Header dashboard utama
 # -----------------------------------
 umkm_profile = st.session_state.get("umkm_profile", {})
 nama_umkm_disp = umkm_profile.get("nama_umkm") or "UMKM Salai Pisang"
+
+if MODE_ADMIN:
+    header_right_html = """
+      <div class="header-right">
+        <div class="tag-pill">Dashboard UMKM</div>
+        <div class="tag-pill secondary">Kelola data (Admin)</div>
+      </div>
+    """
+else:
+    header_right_html = """
+      <div class="header-right">
+        <div class="tag-pill">Dashboard UMKM</div>
+      </div>
+    """
 
 col_head_left, col_head_right = st.columns([6, 2])
 
@@ -1015,8 +868,62 @@ if MODE_ADMIN:
             st.error(f"Gagal membaca file: {e}")
 
 # -----------------------------------
+# Load data dari file di repo
+# -----------------------------------
+@st.cache_data(show_spinner=True)
+def load_data():
+    excel_path = Path(__file__).parent / "hasil_prediksi_sarima.xlsx"
+    tidy, df_actual, df_forecast = parse_sales_excel(excel_path)
+    return tidy, df_actual, df_forecast
+
+
+try:
+    tidy, df_actual, df_forecast = load_data()
+except Exception as e:
+    st.error(
+        "Terjadi masalah saat membaca file Excel bawaan. "
+        "Silakan periksa struktur file di repo.\n\n"
+        f"Detail: {e}"
+    )
+    st.stop()
+
+# -----------------------------------
+# Sidebar: ringkasan & sumber data (bagian 2, setelah data ada)
+# -----------------------------------
+with st.sidebar:
+    st.markdown("### Ringkasan Singkat")
+    try:
+        df_pred = df_forecast.copy()
+        if not df_pred.empty:
+            highest = df_pred.loc[df_pred["nilai"].idxmax()]
+            lowest = df_pred.loc[df_pred["nilai"].idxmin()]
+
+            st.markdown(
+                f"""
+                ✅ <b>Puncak prediksi:</b><br/>
+                {highest['tanggal'].strftime('%B %Y')} — <b>{highest['nilai']:.0f} unit</b><br/><br/>
+                💤 <b>Prediksi terendah:</b><br/>
+                {lowest['tanggal'].strftime('%B %Y')} — <b>{lowest['nilai']:.0f} unit</b>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.caption("Belum ada data prediksi.")
+    except Exception:
+        st.caption("Belum ada data prediksi yang bisa diringkas.")
+
+    st.markdown("### Sumber Data")
+    st.caption(
+        "Data penjualan dan prediksi otomatis diambil dari file Excel "
+        "di dalam sistem. Pengguna tidak perlu upload file apa pun."
+    )
+    st.caption(f"Jumlah baris data: {len(tidy)}")
+
+# -----------------------------------
 # Ringkasan angka utama
 # -----------------------------------
+summary_text = build_summary(tidy)
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -1054,11 +961,9 @@ st.info(
     """
 **Keterangan grafik:**
 
-• Garis biru = penjualan aktual  
 • Garis kuning putus-putus = prediksi penjualan  
 • Area kuning = batas bawah dan batas atas prediksi  
 • Titik berbentuk berlian = bulan sekitar Ramadan (perkiraan)  
-• Titik bulat oranye = puncak prediksi tertinggi  
 """
 )
 
@@ -1084,36 +989,15 @@ with right_col:
     )
 
     st.subheader("Analisis singkat otomatis")
-
-    # 🔹 Poin penting dalam bentuk bullet yang eye-catching
-    key_points = build_key_points(df_actual, df_forecast)
-    if key_points:
-        items_html = "".join(
-            f"<li><span class='bullet-icon'>{icon}</span><span>{text}</span></li>"
-            for icon, text in key_points
-        )
-        st.markdown(
-            f"""
-            <div class="analysis-box highlight">
-              <ul class="key-points">
-                {items_html}
-              </ul>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        # fallback pakai ringkasan panjang biasa
-        st.markdown(
-            f"<div class='analysis-box'>{summary_text}</div>",
-            unsafe_allow_html=True,
-        )
-
+    st.markdown(
+        f"<div class='analysis-box'>{summary_text}</div>",
+        unsafe_allow_html=True,
+    )
 
     st.subheader("Unduh data dan ringkasan")
     csv_buffer = tidy.to_csv(index=False).encode("utf-8")
     st.download_button(
-        label="📥 Download data (CSV)",
+        label="📊 Download data (CSV)",
         data=csv_buffer,
         file_name="data_penjualan_pisang.csv",
         mime="text/csv",
@@ -1145,6 +1029,8 @@ else:
 # -----------------------------------
 # Ringkasan bulan paling ramai dan sepi
 # -----------------------------------
+top3, bottom3 = get_top_bottom_months(df_forecast)
+
 st.markdown("### Ringkasan bulan paling ramai dan sepi")
 col_top, col_low = st.columns(2)
 
@@ -1178,5 +1064,3 @@ with st.expander("Lihat data prediksi (tabel)"):
         ),
         use_container_width=True,
     )
-
-
