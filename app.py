@@ -43,26 +43,54 @@ if "auth" not in st.session_state:
 # -----------------------------------
 # Halaman login (kartu putih melayang)
 # -----------------------------------
+# -----------------------------------
+# Halaman login (kartu putih melayang)
+# -----------------------------------
 def login_screen():
-    # wrapper biar kotaknya di tengah & melayang
-    st.markdown(
-        """
-        <div class="login-page">
-          <div class="login-card">
-            <div class="header-banana card">
-              <div class="header-left">
-                <div class="logo-circle big">🍌</div>
-                <div class="title-block">
-                  <h1>Halaman Masuk Dashboard</h1>
-                  <p>Masukkan kode akses yang diberikan untuk melihat laporan penjualan pisang.</p>
+    # Bikin 3 kolom, pakai kolom tengah biar kartunya benar-benar di tengah
+    c1, c2, c3 = st.columns([1, 2, 1])
+
+    with c2:
+        # Buka div card
+        st.markdown(
+            """
+            <div class="login-card">
+              <div class="header-banana card">
+                <div class="header-left">
+                  <div class="logo-circle big">🍌</div>
+                  <div class="title-block">
+                    <h1>Halaman Masuk Dashboard</h1>
+                    <p>Masukkan kode akses yang diberikan untuk melihat laporan penjualan pisang.</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+              <p class="login-caption">
+                Kode akses ini hanya untuk pemilik usaha dan peneliti yang berwenang.
+              </p>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # ➜ Input PIN + tombol SEKARANG di dalam card yang sama
+        pin = st.text_input(
+            "Kode PIN",
+            type="password",
+            placeholder="Masukkan kode PIN di sini...",
+        )
+
+        if st.button("Masuk", use_container_width=True):
+            if pin == PIN_UMKM:
+                st.session_state.auth = "umkm"
+                st.rerun()
+            elif pin == PIN_ADMIN:
+                st.session_state.auth = "admin"
+                st.rerun()
+            else:
+                st.error("PIN salah. Coba lagi.")
+
+        # Tutup div card
+        st.markdown("</div>", unsafe_allow_html=True)
+
 
     st.write("Kode akses ini hanya untuk pemilik usaha dan peneliti yang berwenang.")
 
@@ -1063,3 +1091,4 @@ with st.expander("Lihat data prediksi (tabel)"):
         ),
         use_container_width=True,
     )
+
