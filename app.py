@@ -521,6 +521,72 @@ def build_summary(tidy: pd.DataFrame) -> str:
         )
 
     return " ".join(lines)
+# -----------------------------------
+# Poin penting ringkas (untuk highlight)
+# -----------------------------------
+def build_key_points(df_actual: pd.DataFrame, df_forecast: pd.DataFrame):
+    points = []
+
+    # Fokus ke prediksi dulu (yang paling berguna buat UMKM)
+    if df_forecast is not None and not df_forecast.empty:
+        g = df_forecast.sort_values("tanggal")
+
+        # Puncak & lembah prediksi
+        peak = g.loc[g["nilai"].idxmax()]
+        low = g.loc[g["nilai"].idxmin()]
+
+        points.append(
+            (
+                "📈",
+                f"Bulan prediksi tertinggi: "
+                f"<span class='key-number'>{peak['tanggal'].strftime('%B %Y')}</span> "
+                f"dengan perkiraan "
+                f"<span class='key-number'>{int(peak['nilai']):,} unit</span>."
+            )
+        )
+
+        points.append(
+            (
+                "📉",
+                f"Bulan prediksi terendah: "
+                f"<span class='key-number'>{low['tanggal'].strftime('%B %Y')}</span> "
+                f"dengan perkiraan "
+                f"<span class='key-number'>{int(low['nilai']):,} unit</span>."
+            )
+        )
+
+        # Arah tren prediksi secara umum
+        gp = g.groupby("tanggal")["nilai"].mean().sort_index()
+        if len(gp) >= 2:
+            first_val = gp.iloc[0]
+            last_val = gp.iloc[-1]
+            if first_val and first_val != 0:
+                growth = (last_val - first_val) / first_val * 100
+                arah = "naik" if growth > 0 else "turun"
+                points.append(
+                    (
+                        "🔍",
+                        f"Secara garis besar, tren prediksi "
+                        f"<span class='key-number'>{arah} {abs(growth):.1f}%</span> "
+                        f"dari awal sampai akhir periode."
+                    )
+                )
+
+    # Kalau mau, tambahkan 1 poin dari data aktual
+    if df_actual is not None and not df_actual.empty:
+        ga = df_actual.groupby("tanggal")["nilai"].mean().sort_index()
+        idxmax_a = ga.idxmax()
+        vmax_a = ga.max()
+        points.append(
+            (
+                "📌",
+                f"Bulan aktual tertinggi: "
+                f"<span class='key-number'>{month_name_id(idxmax_a.month)} {idxmax_a.year}</span> "
+                f"dengan sekitar <span class='key-number'>{vmax_a:,.0f} unit</span>."
+            )
+        )
+
+    return points
 
 
 # -----------------------------------
@@ -1018,10 +1084,31 @@ with right_col:
     )
 
     st.subheader("Analisis singkat otomatis")
-    st.markdown(
-        f"<div class='analysis-box'>{summary_text}</div>",
-        unsafe_allow_html=True,
-    )
+
+    # 🔹 Poin penting dalam bentuk bullet yang eye-catching
+    key_points = build_key_points(df_actual, df_forecast)
+    if key_points:
+        items_html = "".join(
+            f"<li><span class='bullet-icon'>{icon}</span><span>{text}</span></li>"
+            for icon, text in key_points
+        )
+        st.markdown(
+            f"""
+            <div class="analysis-box highlight">
+              <ul class="key-points">
+                {items_html}
+              </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        # fallback pakai ringkasan panjang biasa
+        st.markdown(
+            f"<div class='analysis-box'>{summary_text}</div>",
+            unsafe_allow_html=True,
+        )
+
 
     st.subheader("Unduh data dan ringkasan")
     csv_buffer = tidy.to_csv(index=False).encode("utf-8")
@@ -1091,4 +1178,5 @@ with st.expander("Lihat data prediksi (tabel)"):
         ),
         use_container_width=True,
     )
+
 
