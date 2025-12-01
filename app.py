@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # -----------------------------------
-# Load CSS eksternal
+# Load CSS eksternal (theme.css)
 # -----------------------------------
 def load_local_css(file_name: str = "theme.css") -> None:
     try:
@@ -25,11 +25,145 @@ def load_local_css(file_name: str = "theme.css") -> None:
             css = f.read()
         st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
-        # Kalau CSS tidak ada, app tetap jalan
         pass
 
 
 load_local_css()
+
+# -----------------------------------
+# Tambahan CSS untuk layout & highlight
+# -----------------------------------
+st.markdown(
+    """
+<style>
+/* supaya konten agak ke atas & rapi */
+.main .block-container {
+    padding-top: 1.4rem;
+}
+
+/* LOGIN PAGE */
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 4rem;
+}
+.login-card {
+    background: #ffffff;
+    max-width: 520px;
+    width: 100%;
+    padding: 2.4rem 3rem 2rem 3rem;
+    border-radius: 24px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+.login-card .logo-circle {
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 0.8rem;
+    background: linear-gradient(135deg, #FFE082, #FFCA28);
+}
+.login-card h1 {
+    font-size: 1.7rem;
+    margin-bottom: 0.4rem;
+}
+.login-card p {
+    font-size: 0.95rem;
+    color: #6b7280;
+    margin-bottom: 1.4rem;
+}
+.login-card .pin-wrapper {
+    margin-top: 0.2rem;
+}
+
+/* TOP BAR HEADER */
+.top-bar {
+    background: #ffffff;
+    border-radius: 999px;
+    padding: 0.7rem 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    margin-bottom: 1.4rem;
+}
+.top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+.top-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    background: linear-gradient(135deg, #FFE082, #FFCA28);
+}
+.top-text-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+.top-text-sub {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+/* METRIC CARD */
+.metric-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 1.1rem 1.3rem;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    margin-bottom: 0.5rem;
+}
+
+/* BOX SARAN & ANALISIS */
+.analysis-box {
+    background: linear-gradient(135deg, #FFFAE6, #FFFDF5);
+    border-radius: 20px;
+    padding: 1.2rem 1.3rem;
+    border: 1px solid #FFE8A3;
+    box-shadow: 0 16px 40px rgba(250, 204, 21, 0.12);
+    font-size: 0.95rem;
+}
+.analysis-box ul {
+    padding-left: 1.1rem;
+    margin-bottom: 0;
+}
+
+/* SIDEBAR RINGKASAN */
+.sidebar-summary-title {
+    font-weight: 600;
+    margin-top: 1.2rem;
+    margin-bottom: 0.4rem;
+}
+.sidebar-badge {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+.sidebar-badge.peak {
+    background: #ECFDF3;
+    color: #166534;
+}
+.sidebar-badge.low {
+    background: #EFF6FF;
+    color: #1D4ED8;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
 
 # -----------------------------------
 # Sistem PIN
@@ -40,45 +174,48 @@ PIN_ADMIN = "0708"
 if "auth" not in st.session_state:
     st.session_state.auth = None  # None / "umkm" / "admin"
 
+
 # -----------------------------------
-# Halaman login (kartu putih melayang)
+# Halaman login – kartu di tengah, 1 blok
 # -----------------------------------
 def login_screen():
     st.markdown(
         """
         <div class="login-wrapper">
-          <div class="header-banana card login-card">
-            <div class="header-left">
-              <div class="logo-circle big">🍌</div>
-              <div class="title-block">
-                <h1>Halaman Masuk Dashboard</h1>
-                <p>Masukkan kode akses untuk melihat laporan penjualan pisang.</p>
-              </div>
+          <div class="login-card">
+            <div class="logo-circle">🍌</div>
+            <h1>Halaman Masuk Dashboard</h1>
+            <p>Masukkan kode akses untuk melihat laporan penjualan pisang.</p>
+            <div class="pin-wrapper">
+        """,
+        unsafe_allow_html=True,
+    )
+
+    pin = st.text_input(
+        "Kode PIN",
+        type="password",
+        placeholder="Masukkan kode PIN di sini...",
+        key="pin_login",
+    )
+
+    if st.button("Masuk", use_container_width=True, key="btn_login"):
+        if pin == PIN_UMKM:
+            st.session_state.auth = "umkm"
+            st.rerun()
+        elif pin == PIN_ADMIN:
+            st.session_state.auth = "admin"
+            st.rerun()
+        else:
+            st.error("PIN salah. Coba lagi.")
+
+    st.markdown(
+        """
             </div>
           </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
-    # Input PIN di tengah, tidak terlalu lebar
-    c1, c2, c3 = st.columns([2, 3, 2])
-    with c2:
-        pin = st.text_input(
-            "Kode PIN",
-            type="password",
-            placeholder="Masukkan kode PIN di sini...",
-            key="login_pin",               # <-- biar nggak DuplicateElementId
-        )
-        if st.button("Masuk", use_container_width=True):
-            if pin == PIN_UMKM:
-                st.session_state.auth = "umkm"
-                st.rerun()
-            elif pin == PIN_ADMIN:
-                st.session_state.auth = "admin"
-                st.rerun()
-            else:
-                st.error("PIN salah. Coba lagi.")
 
 
 # -----------------------------------
@@ -92,7 +229,7 @@ MODE_ADMIN = st.session_state.auth == "admin"
 MODE_UMKM = st.session_state.auth == "umkm"
 
 # -----------------------------------
-# Default profil UMKM disimpan di session_state
+# Default profil UMKM di session_state
 # -----------------------------------
 if "umkm_profile" not in st.session_state:
     st.session_state.umkm_profile = {
@@ -105,7 +242,7 @@ if "show_profile_editor" not in st.session_state:
     st.session_state.show_profile_editor = False
 
 # -----------------------------------
-# Helper: nama bulan Indonesia
+# Helper bulan Indonesia
 # -----------------------------------
 ID_MONTHS = {
     "januari": 1,
@@ -157,7 +294,7 @@ def month_name_id(month_num: int) -> str:
 
 
 # -----------------------------------
-# UNIVERSAL EXCEL PARSER
+# UNIVERSAL EXCEL PARSER (tidak diubah)
 # -----------------------------------
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -172,13 +309,11 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def detect_date_column(df: pd.DataFrame):
-    # 1) kolom datetime langsung
     for col in df.columns:
         if pd.api.types.is_datetime64_any_dtype(df[col]):
             if df[col].notna().sum() >= max(3, len(df) * 0.5):
                 return col, df[col]
 
-    # 2) kolom teks dengan kata kunci tanggal
     date_keywords = [
         "tanggal",
         "tgl",
@@ -218,7 +353,6 @@ def parse_year_month_to_date(
 
     y = pd.to_numeric(years, errors="coerce")
 
-    # handle tahun 2 digit
     if (y < 100).sum() > 0 and (y < 100).sum() >= len(y) * 0.5:
         y = y.apply(lambda v: 2000 + v if pd.notna(v) else v)
 
@@ -333,7 +467,6 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
     # Data prediksi
     if forecast_mean_cols:
         mean_col = forecast_mean_cols[0]
-
         lower_col = lower_cols[0] if lower_cols else None
         upper_col = upper_cols[0] if upper_cols else None
 
@@ -356,7 +489,6 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
                 }
             )
 
-    # Fallback: kalau tidak ada kolom yang jelas
     if not records and numeric_cols:
         col = numeric_cols[0]
         for _, row in df_base.iterrows():
@@ -486,7 +618,7 @@ def build_summary(tidy: pd.DataFrame) -> str:
 
 
 # -----------------------------------
-# Saran untuk UMKM (format bullet)
+# Saran untuk UMKM
 # -----------------------------------
 def build_umkm_advice(df_forecast: pd.DataFrame, profile: dict = None) -> str:
     if df_forecast is None or df_forecast.empty:
@@ -536,7 +668,7 @@ def build_umkm_advice(df_forecast: pd.DataFrame, profile: dict = None) -> str:
 
 
 # -----------------------------------
-# Tandai bulan Ramadhan (perkiraan Maret–April)
+# Tandai bulan Ramadhan (Maret–April)
 # -----------------------------------
 def add_ramadhan_flag(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -553,7 +685,6 @@ def create_main_chart(tidy: pd.DataFrame):
 
     df = add_ramadhan_flag(tidy).copy()
 
-    # --- cari titik puncak prediksi ---
     df["is_peak"] = False
     df_pred = df[df["jenis"] == "Prediksi"]
     if not df_pred.empty:
@@ -567,7 +698,6 @@ def create_main_chart(tidy: pd.DataFrame):
         x=alt.X("tanggal:T", title="Tanggal"),
     )
 
-    # Warna
     color_actual = "#1E5AA8"
     color_forecast = "#FCE97B"
     color_ramadhan = "#F9C663"
@@ -638,15 +768,15 @@ def create_main_chart(tidy: pd.DataFrame):
         )
     )
 
-    chart = alt.layer(
-        band, line_actual, line_pred, ramadhan_points, peak_point
-    ).resolve_scale(y="shared")
+    chart = alt.layer(band, line_actual, line_pred, ramadhan_points, peak_point).resolve_scale(
+        y="shared"
+    )
 
     return chart.properties(height=420)
 
 
 # -----------------------------------
-# Grafik Year-over-Year (data aktual saja)
+# Grafik Year-over-Year (aktual)
 # -----------------------------------
 def create_yoy_chart(df_actual: pd.DataFrame):
     if df_actual is None or df_actual.empty:
@@ -691,7 +821,7 @@ def create_yoy_chart(df_actual: pd.DataFrame):
 
 
 # -----------------------------------
-# Hitung 3 bulan tertinggi & terendah dari df_forecast
+# Top & bottom months dari df_forecast
 # -----------------------------------
 def get_top_bottom_months(df_forecast: pd.DataFrame, top_n: int = 3):
     if df_forecast is None or df_forecast.empty:
@@ -715,7 +845,30 @@ def get_top_bottom_months(df_forecast: pd.DataFrame, top_n: int = 3):
 
 
 # -----------------------------------
-# Sidebar: pengaturan tampilan (bagian 1)
+# Load data bawaan (1x, cache)
+# -----------------------------------
+@st.cache_data(show_spinner=True)
+def load_data():
+    excel_path = Path(__file__).parent / "hasil_prediksi_sarima.xlsx"
+    tidy, df_actual, df_forecast = parse_sales_excel(excel_path)
+    return tidy, df_actual, df_forecast
+
+
+try:
+    tidy, df_actual, df_forecast = load_data()
+except Exception as e:
+    st.error(
+        "Terjadi masalah saat membaca file Excel bawaan. "
+        "Silakan periksa struktur file di repo.\n\n"
+        f"Detail: {e}"
+    )
+    st.stop()
+
+summary_text = build_summary(tidy)
+top3, bottom3 = get_top_bottom_months(df_forecast)
+
+# -----------------------------------
+# Sidebar (mode, slider, ringkasan singkat, sumber data)
 # -----------------------------------
 with st.sidebar:
     if MODE_ADMIN:
@@ -736,7 +889,38 @@ with st.sidebar:
         step=1,
     )
 
-# Terapkan ukuran font global
+    # Ringkasan singkat puncak & terendah
+    st.markdown("### Ringkasan Singkat")
+    if df_forecast is not None and not df_forecast.empty:
+        peak = df_forecast.loc[df_forecast["nilai"].idxmax()]
+        low = df_forecast.loc[df_forecast["nilai"].idxmin()]
+
+        st.markdown(
+            f'<div class="sidebar-badge peak">✅ Puncak prediksi: '
+            f'{peak["tanggal"].strftime("%B %Y")} — <b>{int(peak["nilai"])} unit</b></div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div class="sidebar-badge low">📉 Prediksi terendah: '
+            f'{low["tanggal"].strftime("%B %Y")} — <b>{int(low["nilai"])} unit</b></div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.caption("Belum ada data prediksi.")
+
+    st.markdown("### Sumber Data")
+    st.caption(
+        "Data penjualan dan prediksi otomatis diambil dari file Excel "
+        "di dalam sistem. Pengguna tidak perlu upload file apa pun."
+    )
+
+    try:
+        total_data = len(tidy)
+        st.caption(f"Jumlah baris data: {total_data}")
+    except Exception:
+        pass
+
+# terapkan ukuran font global
 st.markdown(
     f"""
     <style>
@@ -749,49 +933,33 @@ st.markdown(
 )
 
 # -----------------------------------
-# Header dashboard utama
+# Header top bar
 # -----------------------------------
 umkm_profile = st.session_state.get("umkm_profile", {})
 nama_umkm_disp = umkm_profile.get("nama_umkm") or "UMKM Salai Pisang"
 
-if MODE_ADMIN:
-    header_right_html = """
-      <div class="header-right">
-        <div class="tag-pill">Dashboard UMKM</div>
-        <div class="tag-pill secondary">Kelola data (Admin)</div>
-      </div>
-    """
-else:
-    header_right_html = """
-      <div class="header-right">
-        <div class="tag-pill">Dashboard UMKM</div>
-      </div>
-    """
-
-col_head_left, col_head_right = st.columns([6, 2])
-
-with col_head_left:
-    st.markdown(
-        f"""
-        <div class="header-banana">
-          <div class="header-left">
-            <div class="logo-circle small">🍌</div>
-            <div class="title-block">
-              <h1>Dashboard Forecast Stok Salai Pisang</h1>
-              <p>{nama_umkm_disp} · Perencanaan stok berbasis model SARIMA.</p>
-            </div>
-          </div>
+st.markdown(
+    f"""
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <div class="top-logo">🍌</div>
+        <div class="top-text">
+          <div class="top-text-title">Dashboard Forecast Stok Salai Pisang</div>
+          <div class="top-text-sub">{nama_umkm_disp} · Perencanaan stok berbasis model SARIMA.</div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+      </div>
+      <div class="top-bar-right">
+    """,
+    unsafe_allow_html=True,
+)
 
-with col_head_right:
-    if st.button("Profil usaha", help="Lihat / ubah profil UMKM"):
-        st.session_state.show_profile_editor = True
+if st.button("Profil usaha", key="btn_open_profile"):
+    st.session_state.show_profile_editor = True
+
+st.markdown("</div></div>", unsafe_allow_html=True)
 
 # -----------------------------------
-# Editor profil (muncul kalau tombol diklik)
+# Editor profil (muncul setelah tombol ditekan)
 # -----------------------------------
 if st.session_state.show_profile_editor:
     st.markdown("### Profil usaha")
@@ -833,7 +1001,7 @@ if st.session_state.show_profile_editor:
 umkm_profile = st.session_state.umkm_profile
 st.markdown(
     f"""
-    <div class="analysis-box" style="margin-top:0.3rem; margin-bottom:1rem;">
+    <div class="analysis-box" style="margin-top:0.6rem; margin-bottom:1.1rem;">
       <b>Profil usaha (ringkas)</b><br/>
       Nama usaha: {umkm_profile.get("nama_umkm") or "-"}<br/>
       Pemilik: {umkm_profile.get("nama_pemilik") or "-"}<br/>
@@ -860,70 +1028,13 @@ if MODE_ADMIN:
         try:
             tidy_new, act_new, pred_new = parse_sales_excel(uploaded)
             st.success("File berhasil dibaca dengan parser universal.")
-            st.dataframe(
-                tidy_new.head(50),
-                use_container_width=True,
-            )
+            st.dataframe(tidy_new.head(50), use_container_width=True)
         except Exception as e:
             st.error(f"Gagal membaca file: {e}")
 
 # -----------------------------------
-# Load data dari file di repo
-# -----------------------------------
-@st.cache_data(show_spinner=True)
-def load_data():
-    excel_path = Path(__file__).parent / "hasil_prediksi_sarima.xlsx"
-    tidy, df_actual, df_forecast = parse_sales_excel(excel_path)
-    return tidy, df_actual, df_forecast
-
-
-try:
-    tidy, df_actual, df_forecast = load_data()
-except Exception as e:
-    st.error(
-        "Terjadi masalah saat membaca file Excel bawaan. "
-        "Silakan periksa struktur file di repo.\n\n"
-        f"Detail: {e}"
-    )
-    st.stop()
-
-# -----------------------------------
-# Sidebar: ringkasan & sumber data (bagian 2, setelah data ada)
-# -----------------------------------
-with st.sidebar:
-    st.markdown("### Ringkasan Singkat")
-    try:
-        df_pred = df_forecast.copy()
-        if not df_pred.empty:
-            highest = df_pred.loc[df_pred["nilai"].idxmax()]
-            lowest = df_pred.loc[df_pred["nilai"].idxmin()]
-
-            st.markdown(
-                f"""
-                ✅ <b>Puncak prediksi:</b><br/>
-                {highest['tanggal'].strftime('%B %Y')} — <b>{highest['nilai']:.0f} unit</b><br/><br/>
-                💤 <b>Prediksi terendah:</b><br/>
-                {lowest['tanggal'].strftime('%B %Y')} — <b>{lowest['nilai']:.0f} unit</b>
-                """,
-                unsafe_allow_html=True,
-            )
-        else:
-            st.caption("Belum ada data prediksi.")
-    except Exception:
-        st.caption("Belum ada data prediksi yang bisa diringkas.")
-
-    st.markdown("### Sumber Data")
-    st.caption(
-        "Data penjualan dan prediksi otomatis diambil dari file Excel "
-        "di dalam sistem. Pengguna tidak perlu upload file apa pun."
-    )
-    st.caption(f"Jumlah baris data: {len(tidy)}")
-
-# -----------------------------------
 # Ringkasan angka utama
 # -----------------------------------
-summary_text = build_summary(tidy)
-
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -968,7 +1079,7 @@ st.info(
 )
 
 # -----------------------------------
-# Layout utama: grafik & panel kanan
+# Layout utama: grafik tren + panel kanan
 # -----------------------------------
 left_col, right_col = st.columns([2, 1])
 
@@ -997,7 +1108,7 @@ with right_col:
     st.subheader("Unduh data dan ringkasan")
     csv_buffer = tidy.to_csv(index=False).encode("utf-8")
     st.download_button(
-        label="📊 Download data (CSV)",
+        label="📥 Download data (CSV)",
         data=csv_buffer,
         file_name="data_penjualan_pisang.csv",
         mime="text/csv",
@@ -1012,25 +1123,8 @@ with right_col:
     )
 
 # -----------------------------------
-# Grafik year-to-year
+# Ringkasan bulan paling ramai & sepi (dipindah ke bawah grafik tren)
 # -----------------------------------
-st.markdown("### Perbandingan penjualan tahun ke tahun")
-st.caption(
-    "Grafik ini membantu membandingkan pola penjualan antar tahun untuk setiap bulan."
-)
-yoy_chart = create_yoy_chart(df_actual)
-if yoy_chart is not None:
-    st.altair_chart(yoy_chart, use_container_width=True)
-else:
-    st.caption(
-        "Grafik year-to-year akan tampil jika data aktual mencakup lebih dari satu tahun."
-    )
-
-# -----------------------------------
-# Ringkasan bulan paling ramai dan sepi
-# -----------------------------------
-top3, bottom3 = get_top_bottom_months(df_forecast)
-
 st.markdown("### Ringkasan bulan paling ramai dan sepi")
 col_top, col_low = st.columns(2)
 
@@ -1047,6 +1141,21 @@ with col_low:
         st.dataframe(bottom3, use_container_width=True, hide_index=True)
     else:
         st.caption("Belum ada data prediksi.")
+
+# -----------------------------------
+# Grafik year-to-year
+# -----------------------------------
+st.markdown("### Perbandingan penjualan tahun ke tahun")
+st.caption(
+    "Grafik ini membantu membandingkan pola penjualan antar tahun untuk setiap bulan."
+)
+yoy_chart = create_yoy_chart(df_actual)
+if yoy_chart is not None:
+    st.altair_chart(yoy_chart, use_container_width=True)
+else:
+    st.caption(
+        "Grafik year-to-year akan tampil jika data aktual mencakup lebih dari satu tahun."
+    )
 
 # -----------------------------------
 # Tabel data prediksi detail
