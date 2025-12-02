@@ -169,13 +169,14 @@
 }
 
 /* ----------------- BUTTON GLOBAL ----------------- */
+/* Semua tombol streamlit jadi putih */
 .stButton > button {
   border-radius: 999px;
-  border: none;
-  background: #111827;
-  color: #f9fafb;
+  background: #ffffff;       /* putih */
+  color: #111827;            /* teks gelap */
   padding: 6px 18px;
   font-weight: 600;
+  border: 1px solid #e5e7eb; /* garis tipis biar keliatan */
 }
 
 /* Tabel */
