@@ -85,10 +85,14 @@
   color: var(--text-muted);
 }
 
-/* Tombol profil supaya "nempel" ke pil putih */
+/* Tombol profil nempel ke header (kanan atas) */
+.profil-btn-wrapper {
+  width: 100%;
+  height: 0;
+}
 .profil-btn-wrapper .stButton > button {
   position: relative;
-  margin-top: -54px;    /* tarik naik ke area header */
+  margin-top: -54px;   /* narik naik ke area header */
   margin-right: 32px;
   float: right;
   background: var(--banana);
@@ -97,10 +101,7 @@
   padding: 6px 20px;
   border: none;
   font-weight: 600;
-  box-shadow: 0 10px 30px rgba(234, 179, 8, 0.35);
-}
-.profil-btn-wrapper {
-  height: 0px; /* supaya tidak menambah tinggi layout */
+  box-shadow: 0 10px 25px rgba(234, 179, 8, 0.3);
 }
 
 /* ----------------- SIDEBAR ----------------- */
@@ -108,7 +109,9 @@
   padding-top: 1rem;
 }
 
-.css-1d391kg, .css-12oz5g7 { /* container utama bisa beda kelas di beberapa versi */
+/* beberapa versi streamlit pakai class ini */
+.css-1d391kg,
+.css-12oz5g7 {
   padding-top: 0 !important;
 }
 
@@ -116,6 +119,7 @@
   background: transparent;
 }
 
+/* chip ringkasan di sidebar */
 .chip {
   border-radius: 999px;
   padding: 8px 14px;
@@ -139,7 +143,7 @@
   background: #e8f3ff;
 }
 
-/* ----------------- METRIC CARDS ----------------- */
+/* ----------------- METRIC CARDS (kalau nanti mau pakai lagi) ----------------- */
 .metric-card {
   background: var(--card-bg);
   border-radius: 22px;
@@ -169,37 +173,17 @@
 }
 
 /* ----------------- BUTTON GLOBAL ----------------- */
-/* Semua tombol streamlit jadi putih */
+/* Semua tombol (login, keluar, dll) jadi putih minimalis */
 .stButton > button {
   border-radius: 999px;
-  background: #ffffff;       /* putih */
-  color: #111827;            /* teks gelap */
+  border: 1px solid var(--border-soft);
+  background: #ffffff;
+  color: #111827;
   padding: 6px 18px;
   font-weight: 600;
-  border: 1px solid #e5e7eb; /* garis tipis biar keliatan */
 }
 
 /* Tabel */
 .dataframe tbody tr:nth-child(even) {
   background: #f9fafb;
-}
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-.profil-btn {
-  background: var(--banana);
-  color: #111827;
-  font-weight: 600;
-  border-radius: 999px;
-  padding: 8px 24px;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(234, 179, 8, 0.25);
-  font-size: 0.9rem;
-}
-
-.profil-btn:hover {
-  background: #ffd95f;
 }
