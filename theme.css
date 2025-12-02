@@ -1,86 +1,212 @@
-/* ============================
-   Halaman login
-   ============================ */
+/* ====== Layout dasar ====== */
+body, .stApp {
+    background-color: #f5f6fb;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Hilangkan padding default di atas */
+.block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}
+
+/* ====== LOGIN ====== */
 .login-page {
-  min-height: 80vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 80vh;
+    padding-top: 4rem;
 }
 
 .login-card {
-  background: #ffffff;
-  border-radius: 26px;
-  padding: 2.5rem 3rem;
-  max-width: 520px;
-  width: 100%;
-  box-shadow: 0 20px 55px rgba(15, 23, 42, 0.08);
-  border: 1px solid #f1f1f5;
-  text-align: left;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 18px 60px rgba(15, 23, 42, 0.12);
+    padding: 2.5rem 3rem 2.5rem 3rem;
+    max-width: 520px;
+    width: 100%;
+    text-align: left;
 }
 
-.login-icon-wrap {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 1rem;
+.login-card h1 {
+    font-size: 1.9rem;
+    margin-bottom: 0.4rem;
 }
 
-.login-icon-circle {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 20%, #ffe46b, #ffcc33);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  box-shadow: 0 10px 30px rgba(250, 204, 21, 0.45);
+.login-card p {
+    font-size: 0.95rem;
+    color: #6b7280;
+    margin-bottom: 1.6rem;
 }
 
-.login-title {
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
-  color: #111827;
+.login-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ffe26e, #facc15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1.1rem;
 }
 
-.login-subtitle {
-  text-align: center;
-  font-size: 0.95rem;
-  color: #6b7280;
-  margin-bottom: 1.5rem;
+/* Label "Kode PIN" di login sedikit dikecilkan */
+.login-card label {
+    font-size: 0.9rem !important;
 }
 
-/* Background app lembut */
-.stApp {
-  background: #f7f7fb;
-}
-/* --- Poin penting di panel kanan --- */
-.analysis-box.highlight {
-  border-left: 4px solid #f9c663;
-  background: #fffaf0;
+/* ====== HEADER DASHBOARD ====== */
+
+.page-header-card {
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.85rem 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.10);
+    margin-bottom: 1.2rem;
 }
 
-.key-points {
-  list-style: none;
-  padding-left: 0;
-  margin: 0;
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
-.key-points li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 0.4rem;
+.logo-circle.small {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: #facc15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
 }
 
-.bullet-icon {
-  font-size: 1.1rem;
-  line-height: 1.4;
+.title-block h1 {
+    font-size: 1.4rem;
+    margin: 0;
 }
 
-.key-number {
-  font-weight: 600;
-  color: #1e5aa8;  /* biru biar angka penting ke-highlight */
+.title-block p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+/* Tombol di header (Profil usaha) */
+.page-header-card .stButton > button {
+    width: 100%;
+    border-radius: 999px;
+    background: #111827;
+    color: #fff;
+    border: none;
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+}
+
+/* ====== Profile box ====== */
+.profile-box {
+    margin-top: 0.4rem;
+}
+
+/* ====== Metric card ====== */
+
+.metric-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 1.1rem 1.4rem;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    margin-bottom: 0.8rem;
+}
+
+/* ====== Sidebar ====== */
+
+.css-1d391kg, .css-1lcbmhc {
+    /* old class names might change; this is intentionally light-touch */
+}
+
+.sidebar-badge {
+    border-radius: 20px;
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.sidebar-badge--peak {
+    background: #dcfce7;
+    border: 1px solid #22c55e33;
+}
+
+.sidebar-badge--low {
+    background: #e0f2fe;
+    border: 1px solid #38bdf833;
+}
+
+.badge-title {
+    font-size: 0.8rem;
+    color: #4b5563;
+}
+
+.badge-main {
+    font-size: 0.92rem;
+}
+
+/* ====== Analysis / saran boxes ====== */
+
+.analysis-box {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 1rem 1.2rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.analysis-box ul {
+    padding-left: 1.2rem;
+    margin-bottom: 0;
+}
+
+/* ====== Download buttons ====== */
+
+.stDownloadButton button {
+    border-radius: 999px;
+}
+
+/* ====== Tables ====== */
+
+.dataframe, .stDataFrame, .st-ag-grid {
+    font-size: 0.9rem;
+}
+
+/* ====== Chart spacing ====== */
+
+.css-1kyxreq {
+    margin-top: 0.4rem;
+}
+
+/* General button style */
+.stButton > button {
+    border-radius: 999px;
+}
+
+/* Input style kecil rapi */
+.stTextInput > div > div > input {
+    border-radius: 999px;
+}
+
+/* ====== Expander ====== */
+.streamlit-expanderHeader {
+    font-size: 0.95rem;
+}
+
+/* Small tweak for headers */
+h2, .stMarkdown h2 {
+    margin-top: 1.5rem;
 }
