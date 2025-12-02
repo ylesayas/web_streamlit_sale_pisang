@@ -628,7 +628,7 @@ def get_top_bottom_months(df_forecast: pd.DataFrame, top_n: int = 3):
     return top, bottom
 
 # -----------------------------------
-# Sidebar
+# Sidebar (mode + logout + font size)
 # -----------------------------------
 with st.sidebar:
     if MODE_ADMIN:
@@ -662,12 +662,11 @@ st.markdown(
 )
 
 # -----------------------------------
-# Header dashboard
+# Header dashboard (pil putih) + tombol profil
 # -----------------------------------
 umkm_profile = st.session_state.get("umkm_profile", {})
 nama_umkm_disp = umkm_profile.get("nama_umkm") or "UMKM Salai Pisang"
 
-# wrapper header card (pil putih)
 st.markdown(
     f"""
     <div class="header-banana">
@@ -683,50 +682,14 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# tombol profil "nempel" ke header via CSS
-# wrapper header + tombol profil di dalamnya
-st.markdown(
-    f"""
-    <div class="header-banana">
-      <div class="header-left">
-        <div class="logo-circle big">🍌</div>
-        <div class="title-block">
-          <h1>Dashboard Forecast Stok Salai Pisang</h1>
-          <p>{nama_umkm_disp} · Perencanaan stok berbasis model SARIMA.</p>
-        </div>
-      </div>
-      <div class="header-right">
-        <button class="profil-btn" onclick="document.dispatchEvent(new Event('open_profile'));">
-          Profil usaha
-        </button>
-      </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Event JS → Streamlit trigger
-st.markdown("""
-<script>
-document.addEventListener('open_profile', function() {
-    window.parent.postMessage({is_profile: true}, "*");
-});
-</script>
-""", unsafe_allow_html=True)
-
-# Handler event untuk buka form profil
-if "_profile_open" not in st.session_state:
-    st.session_state._profile_open = False
-
-# cek apakah pesan diterima
-profile_flag = st.experimental_get_query_params().get("is_profile", None)
-
-if profile_flag is not None:
+# Tombol profil usaha, ditarik ke kanan atas pakai CSS
+st.markdown('<div class="profil-btn-wrapper">', unsafe_allow_html=True)
+if st.button("Profil usaha", key="btn_profil_header"):
     st.session_state.show_profile_editor = True
-
+st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------------
-# Editor profil (muncul saat tombol di klik)
+# Editor profil (muncul saat tombol diklik)
 # -----------------------------------
 if st.session_state.show_profile_editor:
     st.markdown("### Profil usaha")
@@ -825,8 +788,7 @@ if tahun_label == "Semua tahun":
 else:
     yr = int(tahun_label)
     df_forecast = df_forecast_all[df_forecast_all["tanggal"].dt.year == yr].copy()
-    # untuk grafik utama, kita filter hanya tahun itu (aktual & prediksi)
-    tidy = tidy_all[ tidy_all["tanggal"].dt.year == yr ].copy()
+    tidy = tidy_all[tidy_all["tanggal"].dt.year == yr].copy()
     df_actual = df_actual_all[df_actual_all["tanggal"].dt.year == yr].copy()
 
 # -----------------------------------
@@ -862,49 +824,18 @@ with st.sidebar:
     st.markdown("### Sumber Data")
     try:
         total_data = len(tidy_all)
-        st.caption("Data penjualan dan prediksi otomatis diambil dari file Excel di dalam sistem. "
-                   "Pengguna tidak perlu upload file apa pun.")
+        st.caption(
+            "Data penjualan dan prediksi otomatis diambil dari file Excel di dalam sistem. "
+            "Pengguna tidak perlu upload file apa pun."
+        )
         st.caption(f"Jumlah baris data: {total_data}")
     except Exception:
         st.caption("Dataset tidak terbaca.")
 
 # -----------------------------------
-# Ringkasan angka utama
+# Ringkasan angka utama – DIHAPUS kotak putih 3 biji (biar nggak penuh)
 # -----------------------------------
 summary_text = build_summary(tidy)
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-    if not df_forecast.empty:
-        total_pred = df_forecast["tanggal"].nunique()
-        st.metric("Periode prediksi", f"{total_pred} bulan")
-    else:
-        st.metric("Periode prediksi", "–")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with col2:
-    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-    if not df_forecast.empty:
-        peak = df_forecast.loc[df_forecast["nilai"].idxmax()]
-        st.metric(
-            "Bulan tertinggi",
-            f"{int(peak['nilai'])} unit",
-            peak["tanggal"].strftime("%B %Y"),
-        )
-    else:
-        st.metric("Bulan tertinggi", "–")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with col3:
-    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-    if not df_forecast.empty:
-        first_f = df_forecast.sort_values("tanggal")["nilai"].iloc[0]
-        st.metric("Penjualan bulan pertama", f"{int(first_f)} unit")
-    else:
-        st.metric("Penjualan bulan pertama", "–")
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # Info grafik
 st.markdown(
@@ -972,7 +903,10 @@ yoy_chart = create_yoy_chart(df_actual_all)
 if yoy_chart is not None:
     st.altair_chart(yoy_chart, use_container_width=True)
 else:
-    st.caption("Grafik year-to-year akan tampil jika data aktual mencakup lebih dari satu tahun dan lebih dari satu tahun berbeda.")
+    st.caption(
+        "Grafik year-to-year akan tampil jika data aktual mencakup lebih dari satu tahun "
+        "dan lebih dari satu tahun berbeda."
+    )
 
 # -----------------------------------
 # Ringkasan bulan paling ramai & sepi
@@ -1024,7 +958,6 @@ st.markdown("### Simulasi 'what-if' promo penjualan")
 if df_forecast is None or df_forecast.empty:
     st.info("Belum ada data prediksi untuk simulasi.")
 else:
-    # total baseline berdasarkan forecast yang sedang difilter (tahun fokus)
     baseline_total = float(df_forecast["nilai"].sum())
     if not math.isfinite(baseline_total) or baseline_total == 0:
         st.info("Data prediksi belum cukup untuk simulasi (total penjualan = 0).")
@@ -1049,7 +982,10 @@ else:
         with col_a:
             st.metric("Total prediksi asli", f"{baseline_total:,.0f} unit")
         with col_b:
-            st.metric("Total skenario", f"{scenario_total:,.0f} unit", f"{perubahan_pct:+.0f}%")
+            st.metric(
+                "Total skenario",
+                f"{scenario_total:,.0f} unit",
+                f"{perubahan_pct:+.0f}%"
+            )
         with col_c:
             st.metric("Perubahan unit", f"{delta:+.0f} unit")
-
