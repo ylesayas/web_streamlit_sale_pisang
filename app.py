@@ -684,10 +684,46 @@ st.markdown(
 )
 
 # tombol profil "nempel" ke header via CSS
-st.markdown('<div class="profil-btn-wrapper">', unsafe_allow_html=True)
-if st.button("Profil usaha", key="btn_profil_header"):
+# wrapper header + tombol profil di dalamnya
+st.markdown(
+    f"""
+    <div class="header-banana">
+      <div class="header-left">
+        <div class="logo-circle big">🍌</div>
+        <div class="title-block">
+          <h1>Dashboard Forecast Stok Salai Pisang</h1>
+          <p>{nama_umkm_disp} · Perencanaan stok berbasis model SARIMA.</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="profil-btn" onclick="document.dispatchEvent(new Event('open_profile'));">
+          Profil usaha
+        </button>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Event JS → Streamlit trigger
+st.markdown("""
+<script>
+document.addEventListener('open_profile', function() {
+    window.parent.postMessage({is_profile: true}, "*");
+});
+</script>
+""", unsafe_allow_html=True)
+
+# Handler event untuk buka form profil
+if "_profile_open" not in st.session_state:
+    st.session_state._profile_open = False
+
+# cek apakah pesan diterima
+profile_flag = st.experimental_get_query_params().get("is_profile", None)
+
+if profile_flag is not None:
     st.session_state.show_profile_editor = True
-st.markdown('</div>', unsafe_allow_html=True)
+
 
 # -----------------------------------
 # Editor profil (muncul saat tombol di klik)
@@ -1016,3 +1052,4 @@ else:
             st.metric("Total skenario", f"{scenario_total:,.0f} unit", f"{perubahan_pct:+.0f}%")
         with col_c:
             st.metric("Perubahan unit", f"{delta:+.0f} unit")
+
