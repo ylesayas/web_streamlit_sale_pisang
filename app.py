@@ -27,6 +27,7 @@ def load_local_css(file_name: str = "theme.css") -> None:
     except FileNotFoundError:
         pass
 
+
 load_local_css()
 
 # -----------------------------------
@@ -72,6 +73,7 @@ def login_screen():
             else:
                 st.error("PIN salah. Coba lagi.")
 
+
 if st.session_state.auth is None:
     login_screen()
     st.stop()
@@ -96,18 +98,32 @@ if "show_profile_editor" not in st.session_state:
 # Helper nama bulan Indonesia
 # -----------------------------------
 ID_MONTHS = {
-    "januari": 1, "jan": 1, "jan.": 1,
-    "februari": 2, "feb": 2,
-    "maret": 3, "mar": 3,
-    "april": 4, "apr": 4,
+    "januari": 1,
+    "jan": 1,
+    "jan.": 1,
+    "februari": 2,
+    "feb": 2,
+    "maret": 3,
+    "mar": 3,
+    "april": 4,
+    "apr": 4,
     "mei": 5,
-    "juni": 6, "jun": 6,
-    "juli": 7, "jul": 7,
-    "agustus": 8, "agu": 8, "aug": 8,
-    "september": 9, "sep": 9,
-    "oktober": 10, "okt": 10,
-    "november": 11, "nov": 11,
-    "desember": 12, "des": 12, "dec": 12,
+    "juni": 6,
+    "jun": 6,
+    "juli": 7,
+    "jul": 7,
+    "agustus": 8,
+    "agu": 8,
+    "aug": 8,
+    "september": 9,
+    "sep": 9,
+    "oktober": 10,
+    "okt": 10,
+    "november": 11,
+    "nov": 11,
+    "desember": 12,
+    "des": 12,
+    "dec": 12,
 }
 
 ID_MONTH_NAMES = {
@@ -125,8 +141,10 @@ ID_MONTH_NAMES = {
     12: "Desember",
 }
 
+
 def month_name_id(month_num: int) -> str:
     return ID_MONTH_NAMES.get(int(month_num), str(month_num))
+
 
 # -----------------------------------
 # UNIVERSAL EXCEL PARSER
@@ -142,6 +160,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df.columns = new_cols
     return df
 
+
 def detect_date_column(df: pd.DataFrame):
     # 1) sudah datetime
     for col in df.columns:
@@ -150,9 +169,15 @@ def detect_date_column(df: pd.DataFrame):
                 return col, df[col]
     # 2) kolom teks dengan kata kunci tanggal
     date_keywords = [
-        "tanggal", "tgl", "date", "waktu",
-        "period", "periode", "bulan_tahun",
-        "bulan-thn", "bulan-tahun",
+        "tanggal",
+        "tgl",
+        "date",
+        "waktu",
+        "period",
+        "periode",
+        "bulan_tahun",
+        "bulan-thn",
+        "bulan-tahun",
     ]
     for col in df.columns:
         if any(k in col for k in date_keywords):
@@ -160,6 +185,7 @@ def detect_date_column(df: pd.DataFrame):
             if parsed.notna().sum() >= max(3, len(df) * 0.5):
                 return col, parsed
     return None, None
+
 
 def detect_year_month(df: pd.DataFrame):
     year_col = None
@@ -170,6 +196,7 @@ def detect_year_month(df: pd.DataFrame):
         if any(k in col for k in ["bulan", "month", "bln", "mon"]):
             month_col = col
     return year_col, month_col
+
 
 def parse_year_month_to_date(df: pd.DataFrame, year_col: str, month_col: str) -> pd.Series:
     years = df[year_col]
@@ -184,17 +211,20 @@ def parse_year_month_to_date(df: pd.DataFrame, year_col: str, month_col: str) ->
     m = pd.to_numeric(months_raw, errors="coerce")
     mask = m.isna() & months_raw.notna()
     if mask.any():
+
         def map_month(x):
             if pd.isna(x):
                 return math.nan
             s = str(x).strip().lower()
             s2 = re.sub(r"[^\w]+$", "", s)
             return ID_MONTHS.get(s2, math.nan)
+
         m2 = months_raw[mask].map(map_month)
         m[mask] = m2
 
     dates = pd.to_datetime({"year": y, "month": m, "day": 1}, errors="coerce")
     return dates
+
 
 def parse_sales_excel_from_df(df_raw: pd.DataFrame):
     df = normalize_columns(df_raw)
@@ -242,16 +272,26 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
         c for c in numeric_cols if any(k in c for k in ["mean", "forecast", "prediksi"])
     ]
     lower_cols = [
-        c for c in numeric_cols if any(k in c for k in ["lower", "lower_ci", "ci_lower", "bawah"])
+        c
+        for c in numeric_cols
+        if any(k in c for k in ["lower", "lower_ci", "ci_lower", "bawah"])
     ]
     upper_cols = [
-        c for c in numeric_cols if any(k in c for k in ["upper", "upper_ci", "ci_upper", "atas"])
+        c
+        for c in numeric_cols
+        if any(k in c for k in ["upper", "upper_ci", "ci_upper", "atas"])
     ]
 
     actual_keywords = [
-        "actual", "aktual", "realisasi",
-        "penjualan", "sales", "qty",
-        "jumlah", "volume", "unit",
+        "actual",
+        "aktual",
+        "realisasi",
+        "penjualan",
+        "sales",
+        "qty",
+        "jumlah",
+        "volume",
+        "unit",
     ]
     actual_cols = [c for c in numeric_cols if any(k in c for k in actual_keywords)]
 
@@ -290,8 +330,12 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
                     "jenis": "Prediksi",
                     "sumber": mean_col,
                     "nilai": float(mval),
-                    "lower": float(row[lower_col]) if lower_col and not pd.isna(row[lower_col]) else math.nan,
-                    "upper": float(row[upper_col]) if upper_col and not pd.isna(row[upper_col]) else math.nan,
+                    "lower": float(row[lower_col])
+                    if lower_col and not pd.isna(row[lower_col])
+                    else math.nan,
+                    "upper": float(row[upper_col])
+                    if upper_col and not pd.isna(row[upper_col])
+                    else math.nan,
                 }
             )
 
@@ -329,12 +373,14 @@ def parse_sales_excel_from_df(df_raw: pd.DataFrame):
 
     return tidy, df_actual, df_forecast
 
+
 def parse_sales_excel(file_path_or_buffer):
     if isinstance(file_path_or_buffer, (str, Path)):
         df_raw = pd.read_excel(file_path_or_buffer, engine="openpyxl")
     else:
         df_raw = pd.read_excel(file_path_or_buffer, engine="openpyxl")
     return parse_sales_excel_from_df(df_raw)
+
 
 # -----------------------------------
 # Analisis ringkas otomatis
@@ -420,6 +466,7 @@ def build_summary(tidy: pd.DataFrame) -> str:
 
     return " ".join(lines)
 
+
 # -----------------------------------
 # Saran untuk UMKM
 # -----------------------------------
@@ -465,6 +512,7 @@ def build_umkm_advice(df_forecast: pd.DataFrame, profile: dict = None) -> str:
     html = "<ul>" + "".join(bullets) + "</ul>"
     return html
 
+
 # -----------------------------------
 # Tandai bulan Ramadhan (Maret–April)
 # -----------------------------------
@@ -472,6 +520,7 @@ def add_ramadhan_flag(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["is_ramadhan"] = df["tanggal"].dt.month.isin([3, 4])
     return df
+
 
 # -----------------------------------
 # Grafik utama (historis + forecast)
@@ -566,6 +615,7 @@ def create_main_chart(tidy: pd.DataFrame):
 
     return chart.properties(height=420)
 
+
 # -----------------------------------
 # Grafik YoY (perbandingan antar tahun)
 # -----------------------------------
@@ -606,6 +656,7 @@ def create_yoy_chart(df_actual: pd.DataFrame):
 
     return chart
 
+
 # -----------------------------------
 # Top / bottom bulan dari forecast
 # -----------------------------------
@@ -627,8 +678,9 @@ def get_top_bottom_months(df_forecast: pd.DataFrame, top_n: int = 3):
 
     return top, bottom
 
+
 # -----------------------------------
-# Sidebar (mode + logout + font size)
+# Sidebar
 # -----------------------------------
 with st.sidebar:
     if MODE_ADMIN:
@@ -662,34 +714,36 @@ st.markdown(
 )
 
 # -----------------------------------
-# Header dashboard (pil putih) + tombol profil
+# Header dashboard
 # -----------------------------------
 umkm_profile = st.session_state.get("umkm_profile", {})
 nama_umkm_disp = umkm_profile.get("nama_umkm") or "UMKM Salai Pisang"
 
-st.markdown(
-    f"""
-    <div class="header-banana">
-      <div class="header-left">
-        <div class="logo-circle big">🍌</div>
-        <div class="title-block">
-          <h1>Dashboard Forecast Stok Salai Pisang</h1>
-          <p>{nama_umkm_disp} · Perencanaan stok berbasis model SARIMA.</p>
-        </div>
-      </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+# Header + tombol profil di satu baris
+header_col_left, header_col_right = st.columns([5, 1])
 
-# Tombol profil usaha, ditarik ke kanan atas pakai CSS
-st.markdown('<div class="profil-btn-wrapper">', unsafe_allow_html=True)
-if st.button("Profil usaha", key="btn_profil_header"):
-    st.session_state.show_profile_editor = True
-st.markdown('</div>', unsafe_allow_html=True)
+with header_col_left:
+    st.markdown(
+        f"""
+        <div class="header-banana">
+          <div class="header-left">
+            <div class="logo-circle big">🍌</div>
+            <div class="title-block">
+              <h1>Dashboard Forecast Stok Salai Pisang</h1>
+              <p>{nama_umkm_disp} · Perencanaan stok berbasis model SARIMA.</p>
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+with header_col_right:
+    if st.button("Profil usaha", key="btn_profil_header"):
+        st.session_state.show_profile_editor = True
 
 # -----------------------------------
-# Editor profil (muncul saat tombol diklik)
+# Editor profil (muncul saat tombol di klik)
 # -----------------------------------
 if st.session_state.show_profile_editor:
     st.markdown("### Profil usaha")
@@ -748,6 +802,7 @@ def load_default_data():
     tidy, df_actual, df_forecast = parse_sales_excel(excel_path)
     return tidy, df_actual, df_forecast
 
+
 tidy_all, df_actual_all, df_forecast_all = load_default_data()
 
 if MODE_ADMIN:
@@ -788,6 +843,7 @@ if tahun_label == "Semua tahun":
 else:
     yr = int(tahun_label)
     df_forecast = df_forecast_all[df_forecast_all["tanggal"].dt.year == yr].copy()
+    # untuk grafik utama, filter hanya tahun itu
     tidy = tidy_all[tidy_all["tanggal"].dt.year == yr].copy()
     df_actual = df_actual_all[df_actual_all["tanggal"].dt.year == yr].copy()
 
@@ -833,9 +889,46 @@ with st.sidebar:
         st.caption("Dataset tidak terbaca.")
 
 # -----------------------------------
-# Ringkasan angka utama – DIHAPUS kotak putih 3 biji (biar nggak penuh)
+# Ringkasan angka utama (metric cards)
 # -----------------------------------
 summary_text = build_summary(tidy)
+
+st.markdown("<div class='metric-row'>", unsafe_allow_html=True)
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
+    if not df_forecast.empty:
+        total_pred = df_forecast["tanggal"].nunique()
+        st.metric("Periode prediksi", f"{total_pred} bulan")
+    else:
+        st.metric("Periode prediksi", "–")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with c2:
+    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
+    if not df_forecast.empty:
+        peak = df_forecast.loc[df_forecast["nilai"].idxmax()]
+        st.metric(
+            "Bulan tertinggi",
+            f"{int(peak['nilai'])} unit",
+            peak["tanggal"].strftime("%B %Y"),
+        )
+    else:
+        st.metric("Bulan tertinggi", "–")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with c3:
+    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
+    if not df_forecast.empty:
+        first_f = df_forecast.sort_values("tanggal")["nilai"].iloc[0]
+        st.metric("Penjualan bulan pertama", f"{int(first_f)} unit")
+    else:
+        st.metric("Penjualan bulan pertama", "–")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 # Info grafik
 st.markdown(
@@ -897,15 +990,16 @@ with right_col:
 # Grafik YoY - perbandingan tahun ke tahun
 # -----------------------------------
 st.markdown("### Perbandingan penjualan tahun ke tahun")
-st.caption("Grafik ini membantu membandingkan pola penjualan antar tahun untuk setiap bulan.")
+st.caption(
+    "Grafik ini membantu membandingkan pola penjualan antar tahun untuk setiap bulan."
+)
 
 yoy_chart = create_yoy_chart(df_actual_all)
 if yoy_chart is not None:
     st.altair_chart(yoy_chart, use_container_width=True)
 else:
     st.caption(
-        "Grafik year-to-year akan tampil jika data aktual mencakup lebih dari satu tahun "
-        "dan lebih dari satu tahun berbeda."
+        "Grafik year-to-year akan tampil jika data aktual mencakup lebih dari satu tahun dan ada lebih dari satu tahun berbeda."
     )
 
 # -----------------------------------
@@ -936,8 +1030,7 @@ with col_low:
 with st.expander("Lihat data prediksi (tabel)"):
     if not df_forecast.empty:
         st.dataframe(
-            df_forecast[["tanggal", "nilai", "lower", "upper"]]
-            .rename(
+            df_forecast[["tanggal", "nilai", "lower", "upper"]].rename(
                 columns={
                     "tanggal": "Tanggal",
                     "nilai": "Prediksi",
@@ -985,7 +1078,7 @@ else:
             st.metric(
                 "Total skenario",
                 f"{scenario_total:,.0f} unit",
-                f"{perubahan_pct:+.0f}%"
+                f"{perubahan_pct:+.0f}%",
             )
         with col_c:
-            st.metric("Perubahan unit", f"{delta:+.0f} unit")
+            st.metric("Perubahan unit", f"{delta:,.0f} unit")
