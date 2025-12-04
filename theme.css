@@ -1,3 +1,7 @@
+/* ======================================================
+   THEME UTAMA
+====================================================== */
+
 :root {
   --bg: #f5f6fb;
   --card-bg: #ffffff;
@@ -11,13 +15,17 @@
   --radius-lg: 24px;
 }
 
-/* background app */
+/* ======================================================
+   BACKGROUND APP
+====================================================== */
 .stApp {
-  background: radial-gradient(circle at top left, #fff8d8 0, #f5f6fb 40%, #f5f6fb 100%);
+  background: radial-gradient(circle at top left, #fff8d8 0, #f5f6fb 45%, #f5f6fb 100%);
   color: var(--text-main);
 }
 
-/* ----------------- LOGIN ----------------- */
+/* ======================================================
+   LOGIN PAGE
+====================================================== */
 .login-card {
   margin: 80px auto 32px auto;
   max-width: 640px;
@@ -37,6 +45,7 @@
   color: var(--text-muted);
   margin: 0;
 }
+
 .login-logo-circle {
   width: 64px;
   height: 64px;
@@ -49,22 +58,34 @@
   margin-bottom: 12px;
 }
 
-/* ----------------- HEADER ----------------- */
+/* Tombol login putih */
+#login_button button {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border-radius: 999px !important;
+  border: 2px solid #e5e7eb !important;
+  font-weight: 600 !important;
+}
+
+/* ======================================================
+   HEADER DASHBOARD
+====================================================== */
 .header-banana {
-  margin-top: 12px;
-  margin-bottom: 10px;
-  padding: 16px 26px;
+  width: 100%;
   background: var(--card-bg);
   border-radius: 999px;
+  padding: 18px 26px;
+  margin-top: 10px;
   box-shadow: 0 20px 45px rgba(15, 23, 42, 0.07);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
+
 .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 .logo-circle.big {
   width: 56px;
@@ -77,49 +98,31 @@
   font-size: 1.9rem;
 }
 .title-block h1 {
-  font-size: 1.8rem;
   margin: 0;
+  font-size: 1.8rem;
 }
 .title-block p {
   margin: 4px 0 0 0;
   color: var(--text-muted);
 }
 
-/* Tombol profil nempel ke header (kanan atas) */
-.profil-btn-wrapper {
-  width: 100%;
-  height: 0;
-}
-.profil-btn-wrapper .stButton > button {
-  position: relative;
-  margin-top: -54px;   /* narik naik ke area header */
-  margin-right: 32px;
-  float: right;
-  background: var(--banana);
-  color: #111827;
-  border-radius: 999px;
-  padding: 6px 20px;
-  border: none;
-  font-weight: 600;
-  box-shadow: 0 10px 25px rgba(234, 179, 8, 0.3);
+/* Tombol profil di header */
+button[kind="secondary"], .stButton > button#btn_profil_header {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border-radius: 999px !important;
+  padding: 6px 22px !important;
+  font-weight: 600 !important;
+  border: none !important;
 }
 
-/* ----------------- SIDEBAR ----------------- */
-.block-container {
-  padding-top: 1rem;
-}
-
-/* beberapa versi streamlit pakai class ini */
-.css-1d391kg,
-.css-12oz5g7 {
-  padding-top: 0 !important;
-}
-
+/* ======================================================
+   SIDEBAR
+====================================================== */
 .sidebar .sidebar-content {
-  background: transparent;
+  background: transparent !important;
 }
 
-/* chip ringkasan di sidebar */
 .chip {
   border-radius: 999px;
   padding: 8px 14px;
@@ -133,57 +136,83 @@
   color: var(--text-muted);
   margin-bottom: 2px;
 }
-.chip-value b {
-  color: #111827;
-}
-.chip-green {
-  background: #e6ffe9;
-}
-.chip-blue {
-  background: #e8f3ff;
+.chip-green { background: #e6ffe9; }
+.chip-blue { background: #e8f3ff; }
+
+/* ======================================================
+   METRIC CARDS (periode / bulan tertinggi / bulan pertama)
+====================================================== */
+.metric-row {
+  margin-top: 10px;
+  margin-bottom: 14px;
 }
 
-/* ----------------- METRIC CARDS (kalau nanti mau pakai lagi) ----------------- */
 .metric-card {
   background: var(--card-bg);
   border-radius: 22px;
-  padding: 14px 18px;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05);
+  padding: 18px 20px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
 }
 
-/* ----------------- ANALYSIS BOX ----------------- */
-.analysis-box {
-  background: #ffffff;
-  border-radius: 18px;
-  border: 1px solid var(--border-soft);
-  padding: 14px 18px;
-}
-.analysis-box.soft {
-  background: #fffef6;
+/* Supaya tidak ada kotak putih kosong */
+.block-container > div:has(.metric-card) {
+    margin-bottom: -20px !important;
 }
 
-/* ----------------- HINT BANNER ----------------- */
+/* ======================================================
+   HINT BANNER
+====================================================== */
 .hint-banner {
   background: #e5f0ff;
-  border-radius: 18px;
+  border-radius: 16px;
   padding: 10px 18px;
-  margin: 10px 0 18px 0;
+  margin-top: 8px;
+  margin-bottom: 18px;
   font-size: 0.9rem;
   color: #1f2933;
 }
 
-/* ----------------- BUTTON GLOBAL ----------------- */
-/* Semua tombol (login, keluar, dll) jadi putih minimalis */
+/* ======================================================
+   BUTTON GLOBAL
+====================================================== */
 .stButton > button {
-  border-radius: 999px;
-  border: 1px solid var(--border-soft);
-  background: #ffffff;
-  color: #111827;
-  padding: 6px 18px;
-  font-weight: 600;
+  border-radius: 999px !important;
+  border: none !important;
+  background: #111827 !important;
+  color: #f9fafb !important;
+  padding: 6px 18px !important;
+  font-weight: 600 !important;
 }
 
-/* Tabel */
+/* tombol sidebar "Keluar" dibuat putih */
+.stButton > button[kind="primary"] {
+  background: white !important;
+  color: black !important;
+  border: 1px solid #ddd !important;
+}
+
+/* ======================================================
+   TABLES
+====================================================== */
 .dataframe tbody tr:nth-child(even) {
   background: #f9fafb;
+}
+
+/* ======================================================
+   SELECTBOX & INPUT
+====================================================== */
+.stSelectbox > div > div {
+  border-radius: 12px !important;
+}
+
+.stTextInput input {
+  border-radius: 12px !important;
+}
+
+/* ======================================================
+   EXPANDER
+====================================================== */
+.streamlit-expanderHeader {
+  font-weight: 600 !important;
+  font-size: 1.05rem !important;
 }
