@@ -37,6 +37,13 @@ h1, h2, h3 { letter-spacing:-0.02em; color: var(--text); }
   border:1px solid var(--yellow-border);
   font-size:26px;
 }
+.logo-circle img{
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 .header-title{ font-size:1.45rem; font-weight:800; color:var(--text); line-height:1.15; }
 .header-sub{ color:var(--muted); font-size:0.95rem; margin-top:4px; }
 
