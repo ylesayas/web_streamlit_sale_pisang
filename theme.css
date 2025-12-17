@@ -3,20 +3,34 @@
    BANANA THEME – FINAL (KUNING PUTIH, FIGMA VIBES)
    + UPGRADE SELECTBOX + MENU
    ===================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap');
+
+html, body, [class*="css"]{
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
 
 :root{
   --bg:#FBF7EF;
   --card:#FFFFFF;
-  --border:#F1E7D6;
-  --text:#2A241C;
-  --muted:#7A736A;
-  --yellow:#F6D25E;
-  --yellow-soft:#FFF4CC;
-  --yellow-border:#F0E0A8;
+  --border:#EADFCB;
+
+  --text:#1F1F1F;        /* teks lebih kontras */
+  --muted:#6E665C;
+
+  --yellow:#F4B400;      /* kuning lebih tegas */
+  --yellow-soft:#FFF1B8; /* kuning muda tapi jelas */
+  --yellow-border:#E0B84C;
 }
+
 
 .stApp { background: var(--bg); }
 .block-container { padding-top: 1.4rem; padding-bottom: 2.2rem; }
+
+html, body, [class*="css"]{ font-size: 17px; }   /* bikin teks lebih gede */
+.small-muted{ font-size: 1.05rem; }              /* teks keterangan lebih kebaca */
+.header-title{ font-size: 1.7rem; }              /* judul header lebih gede */
+.card-value{ font-size: 2.2rem; }                /* angka utama lebih gede */
+
 
 h1, h2, h3 { letter-spacing:-0.02em; color: var(--text); }
 .small-muted { color: var(--muted); font-size: 0.95rem; }
