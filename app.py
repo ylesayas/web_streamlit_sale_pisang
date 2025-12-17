@@ -1,5 +1,6 @@
 import math
 import re
+import base64
 from pathlib import Path
 from io import BytesIO
 
@@ -16,6 +17,21 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# =========================================================
+# LOGO (GAMBAR DARI REPO)
+# taruh file di: assets/logo.png
+# =========================================================
+ASSET_DIR = Path(__file__).parent / "assets"
+LOGO_PATH = ASSET_DIR / "logo.png"
+
+def img_to_base64(path: Path) -> str:
+    return base64.b64encode(path.read_bytes()).decode("utf-8")
+
+logo_html = "🍌"
+if LOGO_PATH.exists():
+    logo_b64 = img_to_base64(LOGO_PATH)
+    logo_html = f"<img src='data:image/png;base64,{logo_b64}'/>"
 
 # =========================================================
 # FULL CSS FINAL (BANANA + FIGMA + UPGRADE SELECTBOX + MENU)
@@ -55,6 +71,11 @@ h1, h2, h3 { letter-spacing:-0.02em; color: var(--text); }
   background: var(--yellow-soft);
   border:1px solid var(--yellow-border);
   font-size:26px;
+}
+.logo-circle img{
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 .header-title{ font-size:1.45rem; font-weight:800; color:var(--text); line-height:1.15; }
 .header-sub{ color:var(--muted); font-size:0.95rem; margin-top:4px; }
@@ -235,6 +256,10 @@ def convert_value_kg_to_unit(v_kg: float, unit_choice: str) -> float:
     if unit_choice == "Sisir":
         return float(v_kg) * SISIR_PER_KG
     return float(v_kg)
+
+def fmt_dual_units(v_kg: float) -> tuple[str, str]:
+    v_sisir = convert_value_kg_to_unit(v_kg, "Sisir")
+    return f"{fmt_int(v_kg)} kg", f"{fmt_int(v_sisir)} sisir"
 
 # =========================================================
 # UI HELPERS
@@ -434,12 +459,9 @@ def make_line_month_chart(df_pred_year: pd.DataFrame, unit_choice: str):
 
     u = unit_suffix(unit_choice)
 
-    # agregasi jadi bulanan
     d = df_pred_year.copy()
     d["bulan"] = d["tanggal"].dt.to_period("M").dt.to_timestamp()
     agg = d.groupby("bulan", as_index=False)["nilai"].mean().sort_values("bulan")
-
-    # konversi satuan
     agg["nilai_u"] = agg["nilai"].apply(lambda x: convert_value_kg_to_unit(x, unit_choice))
 
     base = alt.Chart(agg).encode(
@@ -498,7 +520,6 @@ def make_bar_month_chart(df_pred_year: pd.DataFrame, unit_choice: str):
     d["bulan"] = d["tanggal"].dt.month
     d["bulan_nama"] = d["bulan"].apply(month_name_id)
     agg = d.groupby(["bulan", "bulan_nama"], as_index=False)["nilai"].mean().sort_values("bulan")
-
     agg["nilai_u"] = agg["nilai"].apply(lambda x: convert_value_kg_to_unit(x, unit_choice))
 
     chart = (
@@ -526,7 +547,7 @@ def make_bar_month_chart(df_pred_year: pd.DataFrame, unit_choice: str):
     return chart
 
 # =========================================================
-# TABLE (kg base, nanti dikonversi saat tampil)
+# TABLE (kg base)
 # =========================================================
 def month_table(df_pred: pd.DataFrame, year: int):
     d = df_pred[df_pred["tanggal"].dt.year == year].copy()
@@ -573,9 +594,9 @@ if st.session_state.data_override is not None:
 # =========================================================
 with st.sidebar:
     st.markdown(
-        """
+        f"""
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-          <div class="logo-circle">🍌</div>
+          <div class="logo-circle">{logo_html}</div>
           <div>
             <div style="font-weight:800;color:#2a241c;line-height:1.1;">Sale Pisang</div>
             <div class="small-muted" style="margin-top:2px;">Dashboard UMKM</div>
@@ -642,9 +663,9 @@ if st.session_state.mode_umkm and page == "Upload":
 # HEADER
 # =========================================================
 st.markdown(
-    """
+    f"""
     <div class="header-wrap">
-      <div class="logo-circle">🍌</div>
+      <div class="logo-circle">{logo_html}</div>
       <div>
         <div class="header-title">Berapa Pisang yang Perlu Disiapkan?</div>
         <div class="header-sub">Panduan belanja bahan baku berdasarkan hasil prediksi dari file Excel.</div>
@@ -712,7 +733,7 @@ with st.form("form_filter"):
 
     with cU:
         unit = st.selectbox(
-            "Satuan",
+            "Satuan (untuk grafik)",
             ["Kg", "Sisir"],
             index=["Kg", "Sisir"].index(st.session_state.filter_unit),
         )
@@ -742,7 +763,7 @@ df_pred_year = df_pred_all[df_pred_all["tanggal"].dt.year == int(year)].copy()
 if page == "Dashboard":
     st.markdown("### Jawaban cepat")
     st.markdown(
-        "<div class='small-muted'>Angka ini bisa dipakai untuk rencana belanja bahan baku.</div>",
+        "<div class='small-muted'>Angka ini bisa dipakai untuk rencana belanja bahan baku. (Ditampilkan dalam kg & sisir)</div>",
         unsafe_allow_html=True
     )
     st.write("")
@@ -757,10 +778,11 @@ if page == "Dashboard":
             card("Perkiraan pisang yang perlu disiapkan", "Data belum ada", "Coba pilih bulan lain.", big=True)
         else:
             v_kg = float(df_month["nilai"].mean())
-            v_u = convert_value_kg_to_unit(v_kg, unit_choice)
+            text_kg, text_sisir = fmt_dual_units(v_kg)
+
             card(
                 "Perkiraan pisang yang perlu disiapkan",
-                f"± {fmt_int(v_u)} {u}",
+                f"± {text_kg}<br><span style='font-size:0.98rem;color:#7A736A;'>≈ {text_sisir}</span>",
                 f"Bulan {month_name} {year}",
                 big=True
             )
@@ -783,7 +805,7 @@ if page == "Dashboard":
     st.markdown(
         """
         <div class="banner">
-          Untuk melihat tabel lengkap dan ringkasan setahun, buka menu <b>Lihat Rincian Bulanan</b>.
+          Untuk melihat tabel lengkap (kg & sisir) dan ringkasan setahun, buka menu <b>Lihat Rincian Bulanan</b>.
         </div>
         """,
         unsafe_allow_html=True
@@ -795,7 +817,7 @@ if page == "Dashboard":
 elif page == "Detail":
     st.markdown("### Rincian kebutuhan pisang per bulan")
     st.markdown(
-        "<div class='small-muted'>Bagian ini menampilkan angka perkiraan untuk setiap bulan sebagai panduan belanja.</div>",
+        "<div class='small-muted'>Bagian ini menampilkan angka perkiraan untuk setiap bulan sebagai panduan belanja (kg & sisir).</div>",
         unsafe_allow_html=True
     )
     st.write("")
@@ -807,7 +829,7 @@ elif page == "Detail":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("### Grafik ringkas per bulan")
     st.markdown(
-        "<div class='small-muted'>Memudahkan melihat bulan mana yang kebutuhan pisangnya lebih tinggi.</div>",
+        "<div class='small-muted'>Grafik mengikuti satuan pilihan di filter (kg / sisir).</div>",
         unsafe_allow_html=True
     )
     bar = make_bar_month_chart(df_pred_year, unit_choice)
@@ -818,24 +840,29 @@ elif page == "Detail":
     st.markdown("</div>", unsafe_allow_html=True)
     st.write("")
 
-    st.markdown("### Tabel perkiraan kebutuhan per bulan")
+    st.markdown("### Tabel perkiraan kebutuhan per bulan (kg & sisir)")
     tbl = month_table(df_pred_all, int(year))
     if tbl.empty:
         st.caption("Belum ada data prediksi.")
     else:
         tbl_show = tbl.copy()
 
-        # konversi kolom kg -> sisir kalau dipilih
-        if unit_choice == "Sisir":
-            for col in ["Perkiraan_kg", "Min_kg", "Maks_kg"]:
-                if col in tbl_show.columns:
-                    tbl_show[col] = tbl_show[col].apply(lambda x: convert_value_kg_to_unit(x, "Sisir"))
+        # bikin versi sisir dari kolom kg (selalu tampil dua-duanya)
+        for col in ["Perkiraan_kg", "Min_kg", "Maks_kg"]:
+            if col in tbl_show.columns:
+                tbl_show[col.replace("_kg", "_sisir")] = tbl_show[col].apply(
+                    lambda x: convert_value_kg_to_unit(x, "Sisir")
+                )
 
         tbl_show = tbl_show.rename(columns={
-            "Perkiraan_kg": f"Perkiraan kebutuhan ({u})",
-            "Min_kg": f"Perkiraan paling sedikit ({u})",
-            "Maks_kg": f"Perkiraan paling banyak ({u})",
+            "Perkiraan_kg": "Perkiraan (kg)",
+            "Min_kg": "Min (kg)",
+            "Maks_kg": "Maks (kg)",
+            "Perkiraan_sisir": "Perkiraan (sisir)",
+            "Min_sisir": "Min (sisir)",
+            "Maks_sisir": "Maks (sisir)",
         })
+
         st.dataframe(tbl_show, use_container_width=True, hide_index=True)
 
     st.write("")
@@ -845,17 +872,17 @@ elif page == "Detail":
     idx_peak = g.idxmax()
     peak_val_kg = float(g.max())
 
-    total_year_u = convert_value_kg_to_unit(total_year_kg, unit_choice)
-    avg_month_u = convert_value_kg_to_unit(avg_month_kg, unit_choice)
-    peak_val_u = convert_value_kg_to_unit(peak_val_kg, unit_choice)
+    total_year_sisir = convert_value_kg_to_unit(total_year_kg, "Sisir")
+    avg_month_sisir = convert_value_kg_to_unit(avg_month_kg, "Sisir")
+    peak_val_sisir = convert_value_kg_to_unit(peak_val_kg, "Sisir")
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        card("Total kebutuhan 1 tahun", f"{fmt_int(total_year_u)} {u}", f"Tahun {year}")
+        card("Total kebutuhan 1 tahun", f"{fmt_int(total_year_kg)} kg<br><span style='font-size:0.98rem;color:#7A736A;'>≈ {fmt_int(total_year_sisir)} sisir</span>", f"Tahun {year}")
     with c2:
-        card("Perkiraan rata-rata per bulan", f"{fmt_int(avg_month_u)} {u}", "Sebagai patokan belanja")
+        card("Rata-rata per bulan", f"{fmt_int(avg_month_kg)} kg<br><span style='font-size:0.98rem;color:#7A736A;'>≈ {fmt_int(avg_month_sisir)} sisir</span>", "Sebagai patokan belanja")
     with c3:
-        card("Bulan kebutuhan tertinggi", month_name_id(idx_peak.month), f"± {fmt_int(peak_val_u)} {u}")
+        card("Bulan kebutuhan tertinggi", month_name_id(idx_peak.month), f"± {fmt_int(peak_val_kg)} kg<br><span style='font-size:0.98rem;color:#7A736A;'>≈ {fmt_int(peak_val_sisir)} sisir</span>")
 
     st.write("")
     st.markdown("### Saran untuk usaha")
@@ -867,23 +894,28 @@ elif page == "Detail":
 
     st.write("")
     if not tbl.empty:
-        # export sesuai satuan yang dipilih
+        # export: dua satuan juga
         export_df = tbl.copy()
-        if unit_choice == "Sisir":
-            for col in ["Perkiraan_kg", "Min_kg", "Maks_kg"]:
-                if col in export_df.columns:
-                    export_df[col] = export_df[col].apply(lambda x: convert_value_kg_to_unit(x, "Sisir"))
+        for col in ["Perkiraan_kg", "Min_kg", "Maks_kg"]:
+            if col in export_df.columns:
+                export_df[col.replace("_kg", "_sisir")] = export_df[col].apply(
+                    lambda x: convert_value_kg_to_unit(x, "Sisir")
+                )
+
         export_df = export_df.rename(columns={
-            "Perkiraan_kg": f"Perkiraan_{u}",
-            "Min_kg": f"Min_{u}",
-            "Maks_kg": f"Maks_{u}",
+            "Perkiraan_kg": "Perkiraan_kg",
+            "Min_kg": "Min_kg",
+            "Maks_kg": "Maks_kg",
+            "Perkiraan_sisir": "Perkiraan_sisir",
+            "Min_sisir": "Min_sisir",
+            "Maks_sisir": "Maks_sisir",
         })
 
         xlsx_bytes = to_excel_bytes(export_df, sheet_name=f"Rincian_{year}")
         st.download_button(
-            f"⬇️ Unduh tabel rincian ({u})",
+            "⬇️ Unduh tabel rincian (kg & sisir)",
             data=xlsx_bytes,
-            file_name=f"rincian_kebutuhan_{year}_{u}.xlsx",
+            file_name=f"rincian_kebutuhan_{year}_kg_sisir.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True,
         )
