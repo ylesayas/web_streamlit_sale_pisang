@@ -606,7 +606,6 @@ st.markdown(
       <div class="info-icon">i</div>
       <div>
         Pilih <b>tahun</b> dan <b>bulan</b>, lalu klik <b>Tampilkan</b>.  
-        Halaman ini dibuat sederhana agar mudah dipahami UMKM.
       </div>
     </div>
     """,
@@ -835,3 +834,4 @@ elif page == "Upload":
             st.error(f"Gagal membaca file: {e}")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
