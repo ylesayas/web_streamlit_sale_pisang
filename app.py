@@ -14,6 +14,7 @@ st.set_page_config(
     page_title="Prediksi Kebutuhan Pisang",
     page_icon="🍌",
     layout="wide",
+    initial_sidebar_state="expanded",  # ✅ sidebar selalu kebuka
 )
 
 # =========================================================
@@ -834,4 +835,5 @@ elif page == "Upload":
             st.error(f"Gagal membaca file: {e}")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
 
