@@ -20,6 +20,8 @@ html, body, [class*="css"]{
   --yellow:#F4B400;      /* kuning lebih tegas */
   --yellow-soft:#FFF1B8; /* kuning muda tapi jelas */
   --yellow-border:#E0B84C;
+   --yellow-rgba: rgba(244, 180, 0, 0.25);
+
 }
 
 
@@ -42,7 +44,7 @@ h1, h2, h3 { letter-spacing:-0.02em; color: var(--text); }
   border:1px solid var(--border);
   border-radius:22px;
   padding:16px 18px;
-  box-shadow: 0 4px 18px rgba(30,30,30,.04);
+  box-shadow: 0 0 0 3px rgba(244, 180, 0, 0.25);
 }
 .logo-circle{
   width:48px; height:48px; border-radius:999px;
@@ -163,7 +165,9 @@ div[data-baseweb="select"] > div:hover{
 }
 div[data-baseweb="select"] > div:focus-within{
   border-color: var(--yellow) !important;
-  box-shadow: 0 0 0 3px rgba(246, 210, 94, 0.25) !important;
+  box-shadow: 0 0 0 3px var(--yellow-rgba) !important;
+}
+
 }
 div[role="listbox"]{
   border-radius: 14px !important;
