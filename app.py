@@ -668,7 +668,6 @@ st.markdown(
       <div class="logo-circle">{logo_html}</div>
       <div>
         <div class="header-title">Berapa Pisang yang Perlu Disiapkan?</div>
-        <div class="header-sub">Panduan belanja bahan baku berdasarkan hasil prediksi dari file Excel.</div>
       </div>
     </div>
     """,
@@ -968,3 +967,4 @@ elif page == "Upload":
             st.error(f"Gagal membaca file: {e}")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
