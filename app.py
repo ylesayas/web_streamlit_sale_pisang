@@ -599,6 +599,7 @@ with st.sidebar:
           <div class="logo-circle">{logo_html}</div>
           <div>
             <div style="font-weight:800;color:#2a241c;line-height:1.1;">Sale Pisang bungo family</div>
+             <div style="font-weight:800;color:#2a241c;line-height:1.1;">Bungo Family</div>
             <div class="small-muted" style="margin-top:2px;">Dashboard UMKM</div>
           </div>
         </div>
@@ -967,6 +968,7 @@ elif page == "Upload":
             st.error(f"Gagal membaca file: {e}")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
