@@ -277,7 +277,7 @@ def card(title: str, value: str, sub: str = "", big: bool = False):
         unsafe_allow_html=True
     )
 
-def empty_state(title="Data belum tersedia", desc="Coba pilih tahun/bulan lain atau ganti data prediksi (Pengelola)."):
+def empty_state(title="Data belum tersedia", desc="Coba pilih tahun/bulan lain atau ganti data prediksi (Admin)."):
     st.markdown(
         f"""
         <div class="card">
@@ -610,7 +610,7 @@ with st.sidebar:
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
     st.markdown(
-        f"<span class='mode-pill'>MODE: {'UMKM' if mode_umkm else 'PENGELOLA'}</span>",
+        f"<span class='mode-pill'>MODE: {'UMKM' if mode_umkm else 'Admin'}</span>",
         unsafe_allow_html=True
     )
     st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
@@ -635,7 +635,7 @@ with st.sidebar:
 
     if not mode_umkm:
         st.markdown("<hr/>", unsafe_allow_html=True)
-        st.markdown("### Pengelola")
+        st.markdown("### Admin")
 
         label_upload = "⬆️  Ganti Data Prediksi" + (" ✅" if is_upload else "")
         if st.button(label_upload, use_container_width=True, key="nav_upload"):
@@ -694,7 +694,7 @@ st.write("")
 # =========================================================
 years_available = sorted(df_pred_all["tanggal"].dt.year.unique()) if not df_pred_all.empty else []
 if not years_available:
-    empty_state("Tidak ada data prediksi", "Cek file Excel bawaan atau ganti data prediksi (Pengelola).")
+    empty_state("Tidak ada data prediksi", "Cek file Excel bawaan atau ganti data prediksi (Admin).")
     st.stop()
 
 if "filter_year" not in st.session_state:
@@ -920,12 +920,12 @@ elif page == "Detail":
         )
 
 # =========================================================
-# PAGE: UPLOAD (Pengelola)
+# PAGE: UPLOAD (Admin)
 # =========================================================
 elif page == "Upload":
     st.markdown("## Ganti Data Prediksi")
     st.markdown(
-        "<div class='small-muted'>Unggah file Excel hasil perhitungan dari luar web.</div>",
+        "<div class='small-muted'>Unggah file Excel hasil perhitungan.</div>",
         unsafe_allow_html=True
     )
     st.write("")
@@ -967,4 +967,5 @@ elif page == "Upload":
             st.error(f"Gagal membaca file: {e}")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
 
